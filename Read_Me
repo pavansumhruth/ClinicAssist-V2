@@ -1,0 +1,10 @@
+If you want working versions later, you would typically run:
+
+python3 -m http.server 5500
+python3 -m venv auto_comp
+source auto_comp/bin/activate
+pip install uvicorn fastapi
+uvicorn main:app --reload --log-level debug
+
+cd ~/llama.cpp/build/bin
+./llama-server -m ~/doctor_autocomplete/models/BioMistral-7B.Q4_K_M.gguf -c 4096 -t 8 --parallel 1 -n 128 --port 8081

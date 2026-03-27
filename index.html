@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Clinical Triage Assistant</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #f2f5f9;
+  --surface:   #ffffff;
+  --surface2:  #f7f9fc;
+  --border:    #dde3ed;
+  --accent:    #1a6bb5;
+  --accent2:   #e8f1fb;
+  --accentD:   #145591;
+  --text:      #0d1b2a;
+  --text2:     #4a5568;
+  --text3:     #8a97a8;
+  --red:       #c0392b;
+  --red2:      #fdf0ee;
+  --green:     #1a7a4a;
+  --green2:    #eaf7f0;
+  --high-c:    #7b2d00; --high-bg: #fff3ed;
+  --med-c:     #1a4a7a; --med-bg:  #eaf0fb;
+  --low-c:     #3a4a3a; --low-bg:  #f0f5f0;
+  --r: 10px;
+  --shadow: 0 2px 20px rgba(0,0,0,0.08);
+}
+
+body {
+  font-family: 'IBM Plex Sans', sans-serif;
+  background: var(--bg);
+  min-height: 100vh;
+  display: flex; align-items: flex-start; justify-content: center;
+  padding: 32px 16px 80px;
+}
+
+.card {
+  width: 100%; max-width: 540px;
+  background: var(--surface);
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+/* ─ Header ──────────────────────────── */
+.hdr {
+  background: var(--accent);
+  padding: 20px 26px 18px;
+  color: #fff;
+  display: flex; align-items: center; gap: 14px;
+}
+.hdr-icon {
+  width: 42px; height: 42px; flex-shrink: 0;
+  background: rgba(255,255,255,0.18); border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.35rem;
+}
+.hdr h1 { font-size: 1.05rem; font-weight: 600; }
+.hdr p  { font-size: 0.76rem; opacity: 0.72; margin-top: 2px; font-weight: 300; }
+
+/* ─ Step indicator ───────────────────── */
+.steps {
+  display: flex; align-items: center;
+  padding: 14px 26px 12px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  gap: 0;
+  overflow-x: auto;
+}
+.step {
+  display: flex; align-items: center; gap: 6px;
+  white-space: nowrap; flex-shrink: 0;
+}
+.step-dot {
+  width: 26px; height: 26px; border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--surface);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.7rem; font-weight: 700; color: var(--text3);
+  transition: all 0.25s;
+}
+.step.active .step-dot  { border-color: var(--accent); background: var(--accent); color: #fff; }
+.step.done .step-dot    { border-color: var(--green);  background: var(--green);  color: #fff; font-size: 0.65rem; }
+.step-label { font-size: 0.72rem; color: var(--text3); font-weight: 500; transition: color 0.25s; }
+.step.active .step-label { color: var(--accent); font-weight: 600; }
+.step.done  .step-label  { color: var(--green); }
+.step-line {
+  flex: 1; height: 2px; background: var(--border);
+  margin: 0 6px; min-width: 16px;
+  transition: background 0.25s;
+}
+.step-line.done { background: var(--green); }
+
+/* ─ Body ─────────────────────────────── */
+.body { padding: 22px 26px 26px; }
+
+/* error */
+.err {
+  display: none;
+  background: var(--red2); border: 1px solid #f5c6c2;
+  border-radius: var(--r); padding: 10px 14px;
+  color: var(--red); font-size: 0.84rem; font-weight: 500;
+  margin-bottom: 16px;
+}
+.err.show { display: block; }
+
+/* sections */
+.sec { display: none; }
+.sec.on { display: block; }
+
+/* ─ Input section ───────────────────── */
+.field { margin-bottom: 13px; }
+.field label {
+  display: block; font-size: 0.7rem; font-weight: 600;
+  color: var(--text3); text-transform: uppercase; letter-spacing: 0.07em;
+  margin-bottom: 5px;
+}
+.field input, .field textarea {
+  width: 100%; padding: 10px 13px;
+  border: 1.5px solid var(--border); border-radius: var(--r);
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 0.9rem; color: var(--text); background: var(--surface2);
+  outline: none; resize: none;
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+.field input:focus, .field textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(26,107,181,0.1);
+  background: #fff;
+}
+.field textarea { min-height: 72px; }
+
+/* ─ Buttons ─────────────────────────── */
+.btn {
+  width: 100%; padding: 11px 16px;
+  border: none; border-radius: var(--r);
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 0.9rem; font-weight: 600;
+  cursor: pointer; transition: background 0.18s, transform 0.1s;
+}
+.btn:active:not(:disabled) { transform: scale(0.98); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover:not(:disabled) { background: var(--accentD); }
+.btn-outline {
+  background: transparent; color: var(--text2);
+  border: 1.5px solid var(--border);
+}
+.btn-outline:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.btn-row { display: flex; gap: 10px; margin-top: 16px; }
+.btn-row .btn { flex: 1; }
+
+/* ─ Loading ─────────────────────────── */
+#loadSec {
+  display: none; flex-direction: column; align-items: center;
+  gap: 14px; padding: 36px 0;
+}
+#loadSec.on { display: flex; }
+.spinner {
+  width: 34px; height: 34px;
+  border: 3px solid var(--border); border-top-color: var(--accent);
+  border-radius: 50%; animation: spin 0.75s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.load-msg { font-size: 0.84rem; color: var(--text2); }
+
+/* ─ Question section ────────────────── */
+.complaint-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--accent2); border: 1px solid #b8d0ef;
+  border-radius: 99px; padding: 4px 12px 4px 8px;
+  font-size: 0.77rem; color: var(--accent); font-weight: 500;
+  margin-bottom: 14px;
+}
+.q-meta { font-size: 0.7rem; font-weight: 600; color: var(--accent); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 7px; }
+.q-text {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 1.15rem; font-weight: 500; color: var(--text);
+  margin-bottom: 16px; line-height: 1.35;
+}
+.opts { display: flex; flex-direction: column; gap: 8px; }
+.opts.two { flex-direction: row; }
+.opts.two .opt { flex: 1; justify-content: center; text-align: center; font-weight: 600; }
+.opt {
+  display: flex; align-items: center; gap: 10px;
+  padding: 11px 14px;
+  background: var(--surface2); border: 1.5px solid var(--border); border-radius: var(--r);
+  font-family: 'IBM Plex Sans', sans-serif; font-size: 0.9rem; color: var(--text);
+  cursor: pointer; text-align: left;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+.opt:hover:not(:disabled) { background: var(--accent2); border-color: var(--accent); color: var(--accent); }
+.opt:active:not(:disabled) { transform: scale(0.98); }
+.opt:disabled { opacity: 0.5; cursor: not-allowed; }
+.opt-letter {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--border); color: var(--text2);
+  font-size: 0.68rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+.opt:hover .opt-letter { background: var(--accent); color: #fff; }
+
+/* ─ Section headers ─────────────────── */
+.sec-title { font-size: 1rem; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+.sec-sub   { font-size: 0.79rem; color: var(--text3); margin-bottom: 14px; }
+
+/* ─ Red-flag banner ─────────────────── */
+.rf-banner {
+  display: none; align-items: flex-start; gap: 10px;
+  background: var(--red2); border: 1px solid #f5c6c2;
+  border-radius: var(--r); padding: 11px 14px; margin-bottom: 14px;
+  color: var(--red); font-size: 0.84rem; font-weight: 500;
+}
+.rf-banner.show { display: flex; }
+
+/* ─ Generic selectable list ─────────── */
+.sel-list { display: flex; flex-direction: column; gap: 7px; margin-bottom: 6px; }
+
+/* diagnosis item */
+.diag-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 14px;
+  border: 1.5px solid var(--border); border-radius: var(--r);
+  cursor: pointer; transition: border-color 0.15s, background 0.15s;
+}
+.diag-item:hover { border-color: var(--accent); background: var(--accent2); }
+.diag-item.sel   { border-color: var(--accent); background: var(--accent2); }
+.chk {
+  width: 20px; height: 20px; border-radius: 5px;
+  border: 2px solid var(--border); flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.7rem; color: #fff;
+  transition: background 0.15s, border-color 0.15s;
+}
+.diag-item.sel .chk { background: var(--accent); border-color: var(--accent); }
+.diag-name { font-size: 0.9rem; font-weight: 500; color: var(--text); flex: 1; }
+.badge {
+  font-size: 0.67rem; font-weight: 700; padding: 2px 8px;
+  border-radius: 99px; text-transform: uppercase; letter-spacing: 0.05em; flex-shrink: 0;
+}
+.badge.high   { background: var(--high-bg); color: var(--high-c); }
+.badge.medium { background: var(--med-bg);  color: var(--med-c); }
+.badge.low    { background: var(--low-bg);  color: var(--low-c); }
+
+/* investigation item */
+.inv-item {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 12px 14px;
+  border: 1.5px solid var(--border); border-radius: var(--r);
+  cursor: pointer; transition: border-color 0.15s, background 0.15s;
+}
+.inv-item:hover { border-color: var(--accent); background: var(--accent2); }
+.inv-item.sel   { border-color: var(--accent); background: var(--accent2); }
+.inv-item .chk  { margin-top: 1px; }
+.inv-info { flex: 1; }
+.inv-name   { font-size: 0.9rem; font-weight: 500; color: var(--text); }
+.inv-reason { font-size: 0.78rem; color: var(--text2); margin-top: 2px; }
+
+/* medication item */
+.med-item {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 12px 14px;
+  border: 1.5px solid var(--border); border-radius: var(--r);
+  cursor: pointer; transition: border-color 0.15s, background 0.15s;
+}
+.med-item:hover { border-color: var(--accent); background: var(--accent2); }
+.med-item.sel   { border-color: var(--accent); background: var(--accent2); }
+.med-item .chk  { margin-top: 1px; }
+.med-info { flex: 1; }
+.med-name  { font-size: 0.9rem; font-weight: 600; color: var(--text); }
+.med-dose  {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.78rem; color: var(--text2); margin-top: 3px;
+  line-height: 1.5;
+}
+.med-route {
+  display: inline-block; margin-top: 4px;
+  font-size: 0.68rem; font-weight: 600;
+  background: #f0f3f7; color: var(--text2);
+  border-radius: 4px; padding: 1px 7px;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+
+/* procedure item */
+.proc-item {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 12px 14px;
+  border: 1.5px solid var(--border); border-radius: var(--r);
+  cursor: pointer; transition: border-color 0.15s, background 0.15s;
+}
+.proc-item:hover { border-color: var(--accent); background: var(--accent2); }
+.proc-item.sel   { border-color: var(--accent); background: var(--accent2); }
+.proc-item .chk  { margin-top: 1px; }
+.proc-info { flex: 1; }
+.proc-name       { font-size: 0.9rem; font-weight: 600; color: var(--text); }
+.proc-indication { font-size: 0.78rem; color: var(--text2); margin-top: 3px; line-height: 1.45; }
+
+/* select-count pill */
+.sel-count {
+  font-size: 0.79rem; color: var(--accent); font-weight: 600;
+  min-height: 1.3em; margin-bottom: 4px;
+}
+
+/* ─ Summary section ─────────────────── */
+.summary-block {
+  border-radius: var(--r); border: 1px solid var(--border);
+  overflow: hidden; margin-bottom: 14px;
+}
+.summary-block-header {
+  background: var(--surface2); border-bottom: 1px solid var(--border);
+  padding: 9px 14px;
+  font-size: 0.72rem; font-weight: 700; color: var(--text3);
+  text-transform: uppercase; letter-spacing: 0.07em;
+  display: flex; align-items: center; gap: 7px;
+}
+.summary-block ul { list-style: none; padding: 10px 14px; display: flex; flex-direction: column; gap: 6px; }
+.summary-block li {
+  font-size: 0.88rem; color: var(--text);
+  display: flex; align-items: flex-start; gap: 8px; line-height: 1.45;
+}
+.summary-block li::before { content: "→"; color: var(--accent); flex-shrink: 0; font-weight: 700; }
+
+/* ─ Fade-in ─────────────────────────── */
+.fade { animation: fadeUp 0.25s ease both; }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(7px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─ Disclaimer ──────────────────────── */
+.disclaimer {
+  font-size: 0.7rem; color: var(--text3);
+  text-align: center; margin-top: 20px; line-height: 1.6;
+}
+</style>
+</head>
+<body>
+<div class="card">
+
+  <!-- HEADER -->
+  <div class="hdr">
+    <div class="hdr-icon">⚕</div>
+    <div>
+      <h1>Clinical Triage Assistant</h1>
+      <p>AI-assisted differential diagnosis &amp; management for clinicians</p>
+    </div>
+  </div>
+
+  <!-- STEP INDICATOR -->
+  <div class="steps" id="stepBar">
+    <div class="step active" id="step1"><div class="step-dot">1</div><span class="step-label">History</span></div>
+    <div class="step-line" id="line1"></div>
+    <div class="step" id="step2"><div class="step-dot">2</div><span class="step-label">Questions</span></div>
+    <div class="step-line" id="line2"></div>
+    <div class="step" id="step3"><div class="step-dot">3</div><span class="step-label">Diagnosis</span></div>
+    <div class="step-line" id="line3"></div>
+    <div class="step" id="step4"><div class="step-dot">4</div><span class="step-label">Investigations</span></div>
+    <div class="step-line" id="line4"></div>
+    <div class="step" id="step5"><div class="step-dot">5</div><span class="step-label">Medications</span></div>
+    <div class="step-line" id="line5"></div>
+    <div class="step" id="step6"><div class="step-dot">6</div><span class="step-label">Procedures</span></div>
+  </div>
+
+  <div class="body">
+    <!-- ERROR -->
+    <div class="err" id="errBanner"></div>
+
+    <!-- ①  INPUT -->
+    <div class="sec on fade" id="secInput">
+      <div class="field">
+        <label>Chief Complaint</label>
+        <input id="inComplaint" type="text" placeholder="e.g. Fever with cough, Chest pain, Rash…"/>
+      </div>
+      <div class="field">
+        <label>Clinical History <span style="font-weight:300;text-transform:none;letter-spacing:0">(optional)</span></label>
+        <textarea id="inHistory" placeholder="Age, past illnesses, medications, allergies…"></textarea>
+      </div>
+      <button class="btn btn-primary" id="btnStart" onclick="startSession()">Begin Assessment →</button>
+    </div>
+
+    <!-- LOADING -->
+    <div id="loadSec">
+      <div class="spinner"></div>
+      <span class="load-msg" id="loadMsg">Loading…</span>
+    </div>
+
+    <!-- ②  QUESTION -->
+    <div class="sec fade" id="secQuestion">
+      <div class="complaint-chip"><span>🩺</span><span id="chipTxt"></span></div>
+      <div class="q-meta" id="qMeta"></div>
+      <div class="q-text" id="qText"></div>
+      <div class="opts" id="optsBox"></div>
+    </div>
+
+    <!-- ③  DIAGNOSIS -->
+    <div class="sec fade" id="secDiagnosis">
+      <div class="sec-title">Differential Diagnosis</div>
+      <div class="sec-sub">Select one or more diagnoses that apply</div>
+      <div class="rf-banner" id="rfBanner">⚠️ Red-flag symptom detected — consider urgent evaluation.</div>
+      <div class="sel-count" id="diagCount"></div>
+      <div class="sel-list" id="diagList"></div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="btnDiag" onclick="confirmDiagnoses()" disabled>Next: Investigations →</button>
+        <button class="btn btn-outline" onclick="restart()">Restart</button>
+      </div>
+    </div>
+
+    <!-- ④  INVESTIGATIONS -->
+    <div class="sec fade" id="secInv">
+      <div class="sec-title">Suggested Investigations</div>
+      <div class="sec-sub">Select investigations to order</div>
+      <div class="sel-count" id="invCount"></div>
+      <div class="sel-list" id="invList"></div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="btnInv" onclick="confirmInvestigations()" disabled>Next: Medications →</button>
+        <button class="btn btn-outline" onclick="restart()">Restart</button>
+      </div>
+    </div>
+
+    <!-- ⑤  MEDICATIONS -->
+    <div class="sec fade" id="secMed">
+      <div class="sec-title">Suggested Medications</div>
+      <div class="sec-sub">Select medications to prescribe</div>
+      <div class="sel-count" id="medCount"></div>
+      <div class="sel-list" id="medList"></div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="btnMed" onclick="confirmMedications()" disabled>Next: Procedures →</button>
+        <button class="btn btn-outline" onclick="restart()">Restart</button>
+      </div>
+    </div>
+
+    <!-- ⑥  PROCEDURES -->
+    <div class="sec fade" id="secProc">
+      <div class="sec-title">Suggested Procedures &amp; Instructions</div>
+      <div class="sec-sub">Select procedures to include in the plan</div>
+      <div class="sel-count" id="procCount"></div>
+      <div class="sel-list" id="procList"></div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="btnProc" onclick="confirmProcedures()" disabled>Finalise Plan →</button>
+        <button class="btn btn-outline" onclick="restart()">Restart</button>
+      </div>
+    </div>
+
+    <!-- ⑦  SUMMARY -->
+    <div class="sec fade" id="secSummary">
+      <div class="sec-title">Clinical Management Plan</div>
+      <div class="sec-sub" id="summaryComplaint"></div>
+
+      <div class="summary-block">
+        <div class="summary-block-header">🩺 Diagnoses</div>
+        <ul id="sumDiag"></ul>
+      </div>
+      <div class="summary-block">
+        <div class="summary-block-header">🔬 Investigations</div>
+        <ul id="sumInv"></ul>
+      </div>
+      <div class="summary-block">
+        <div class="summary-block-header">💊 Medications</div>
+        <ul id="sumMed"></ul>
+      </div>
+      <div class="summary-block">
+        <div class="summary-block-header">📋 Procedures &amp; Instructions</div>
+        <ul id="sumProc"></ul>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-outline" onclick="restart()">New Assessment</button>
+        <button class="btn btn-primary" onclick="printPlan()">🖨 Print Plan</button>
+      </div>
+    </div>
+
+    <p class="disclaimer">For clinical decision support only — not a substitute for professional judgment.</p>
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────────────────
+const BASE  = "http://127.0.0.1:8000";
+const MAX_Q = 5;
+
+let sid        = null;
+let qNum       = 0;
+let complaint  = "";
+let redFlag    = false;
+
+// selections across steps
+let selDiag  = new Set();
+let selInv   = new Set();
+let selMed   = new Set();
+let selProc  = new Set();
+
+// ─── Step bar ──────────────────────────────────────────────
+function setStep(n) {
+  // n = 1..6 (matches step ids step1..step6 and lines line1..line5)
+  for (let i = 1; i <= 6; i++) {
+    const s = document.getElementById("step" + i);
+    s.className = "step" + (i < n ? " done" : i === n ? " active" : "");
+    if (i < 6) {
+      document.getElementById("line" + i).className =
+        "step-line" + (i < n ? " done" : "");
+    }
+    // tick mark for done steps
+    const dot = s.querySelector(".step-dot");
+    dot.textContent = i < n ? "✓" : String(i);
+  }
+}
+
+// ─── Section visibility ────────────────────────────────────
+const SECS = ["secInput","secQuestion","secDiagnosis","secInv","secMed","secProc","secSummary"];
+
+function show(id) {
+  SECS.forEach(s => document.getElementById(s).classList.remove("on"));
+  document.getElementById("loadSec").classList.remove("on");
+
+  if (id === "load") {
+    document.getElementById("loadSec").classList.add("on");
+  } else {
+    const el = document.getElementById(id);
+    el.classList.remove("fade");
+    void el.offsetWidth;
+    el.classList.add("on","fade");
+  }
+}
+
+function loading(msg) {
+  document.getElementById("loadMsg").textContent = msg;
+  show("load");
+}
+
+// ─── Error banner ───────────────────────────────────────────
+function showErr(msg) {
+  const b = document.getElementById("errBanner");
+  b.textContent = "⚠ " + msg;
+  b.classList.add("show");
+  setTimeout(() => b.classList.remove("show"), 8000);
+}
+function clearErr() { document.getElementById("errBanner").classList.remove("show"); }
+
+// ─── Generic fetch helper ───────────────────────────────────
+async function api(path, body) {
+  const r = await fetch(BASE + path, {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify(body),
+  });
+  if (!r.ok) {
+    const e = await r.json().catch(() => ({}));
+    throw new Error(e.detail || `Server error ${r.status}`);
+  }
+  return r.json();
+}
+
+// ─── Generic selectable list builder ───────────────────────
+function makeCheckItem(cls, html, onToggle) {
+  const el = document.createElement("div");
+  el.className = cls;
+  el.innerHTML = `<div class="chk"></div>` + html;
+  el.onclick = () => {
+    const sel = el.classList.toggle("sel");
+    el.querySelector(".chk").textContent = sel ? "✓" : "";
+    onToggle(sel);
+  };
+  return el;
+}
+
+function updateCount(countId, set, noun) {
+  const n = set.size;
+  document.getElementById(countId).textContent =
+    n === 0 ? "" : `${n} ${noun}${n > 1 ? "s" : ""} selected`;
+}
+
+// ─── STEP 1 : Start session ─────────────────────────────────
+async function startSession() {
+  complaint = document.getElementById("inComplaint").value.trim();
+  if (!complaint) { showErr("Please enter a chief complaint."); return; }
+  clearErr();
+  document.getElementById("btnStart").disabled = true;
+  loading("Generating first question…");
+
+  try {
+    const data = await api("/start", {
+      chief_complaint:  complaint,
+      clinical_history: document.getElementById("inHistory").value.trim(),
+    });
+    sid  = data.session_id;
+    qNum = 1;
+    document.getElementById("chipTxt").textContent = complaint;
+    setStep(2);
+    renderQuestion(data);
+  } catch(e) {
+    showErr(e.message); show("secInput");
+  } finally {
+    document.getElementById("btnStart").disabled = false;
+  }
+}
+
+// ─── STEP 2 : Answer questions ──────────────────────────────
+async function sendAnswer(option) {
+  document.querySelectorAll(".opt").forEach(b => b.disabled = true);
+  loading("Processing…");
+
+  try {
+    const data = await api("/answer", { session_id: sid, selected_option: option });
+
+    if (data.completed) {
+      redFlag = data.red_flag;
+      renderDiagnosis(data);
+    } else {
+      qNum++;
+      renderQuestion(data);
+    }
+  } catch(e) {
+    showErr(e.message); show("secQuestion");
+    document.querySelectorAll(".opt").forEach(b => b.disabled = false);
+  }
+}
+
+function renderQuestion(data) {
+  document.getElementById("qMeta").textContent =
+    `Question ${qNum} of ${MAX_Q}`;
+  document.getElementById("qText").textContent = data.question;
+
+  const box = document.getElementById("optsBox");
+  box.innerHTML = "";
+  const isTwo = data.options.length === 2;
+  box.className = "opts" + (isTwo ? " two" : "");
+
+  const LETTERS = ["A","B","C","D","E","F"];
+  data.options.forEach((opt, i) => {
+    const btn = document.createElement("button");
+    btn.className = "opt";
+    btn.innerHTML = isTwo
+      ? opt
+      : `<span class="opt-letter">${LETTERS[i]}</span>${opt}`;
+    btn.onclick = () => sendAnswer(opt);
+    box.appendChild(btn);
+  });
+  show("secQuestion");
+}
+
+// ─── STEP 3 : Diagnosis selection ───────────────────────────
+function renderDiagnosis(data) {
+  selDiag.clear();
+  document.getElementById("diagCount").textContent = "";
+  document.getElementById("btnDiag").disabled = true;
+  document.getElementById("rfBanner").classList.toggle("show", !!redFlag);
+
+  const list = document.getElementById("diagList");
+  list.innerHTML = "";
+
+  (data.considerations || []).forEach(c => {
+    const name = typeof c === "string" ? c : c.name;
+    const lk   = (c.likelihood || "").toLowerCase();
+    const badge = lk ? `<span class="badge ${lk}">${lk}</span>` : "";
+
+    const el = makeCheckItem(
+      "diag-item",
+      `<span class="diag-name">${name}</span>${badge}`,
+      sel => {
+        sel ? selDiag.add(name) : selDiag.delete(name);
+        updateCount("diagCount", selDiag, "diagnosis");
+        document.getElementById("btnDiag").disabled = selDiag.size === 0;
+      }
+    );
+    list.appendChild(el);
+  });
+
+  setStep(3);
+  show("secDiagnosis");
+}
+
+async function confirmDiagnoses() {
+  if (selDiag.size === 0) return;
+  loading("Generating investigations…");
+  try {
+    const data = await api("/select-diagnoses", {
+      session_id: sid,
+      selected: [...selDiag],
+    });
+    renderInvestigations(data);
+  } catch(e) { showErr(e.message); show("secDiagnosis"); }
+}
+
+// ─── STEP 4 : Investigation selection ───────────────────────
+function renderInvestigations(data) {
+  selInv.clear();
+  document.getElementById("invCount").textContent = "";
+  document.getElementById("btnInv").disabled = true;
+
+  const list = document.getElementById("invList");
+  list.innerHTML = "";
+
+  (data.investigations || []).forEach(inv => {
+    const name   = inv.name   || inv;
+    const reason = inv.reason || "";
+
+    const el = makeCheckItem(
+      "inv-item",
+      `<div class="inv-info">
+         <div class="inv-name">${name}</div>
+         ${reason ? `<div class="inv-reason">${reason}</div>` : ""}
+       </div>`,
+      sel => {
+        sel ? selInv.add(name) : selInv.delete(name);
+        updateCount("invCount", selInv, "investigation");
+        document.getElementById("btnInv").disabled = selInv.size === 0;
+      }
+    );
+    list.appendChild(el);
+  });
+
+  setStep(4);
+  show("secInv");
+}
+
+async function confirmInvestigations() {
+  if (selInv.size === 0) return;
+  loading("Generating medications…");
+  try {
+    const data = await api("/select-investigations", {
+      session_id: sid,
+      selected: [...selInv],
+    });
+    renderMedications(data);
+  } catch(e) { showErr(e.message); show("secInv"); }
+}
+
+// ─── STEP 5 : Medication selection ──────────────────────────
+function renderMedications(data) {
+  selMed.clear();
+  document.getElementById("medCount").textContent = "";
+  document.getElementById("btnMed").disabled = true;
+
+  const list = document.getElementById("medList");
+  list.innerHTML = "";
+
+  (data.medications || []).forEach(med => {
+    const name  = med.name  || med;
+    const dose  = med.dose  || "";
+    const route = med.route || "";
+
+    // Format dose: replace • with newline bullet for readability
+    const doseHtml = dose
+      ? dose.split("•").map((p,i) => i===0 ? p.trim() : `• ${p.trim()}`).join("<br>")
+      : "";
+
+    const el = makeCheckItem(
+      "med-item",
+      `<div class="med-info">
+         <div class="med-name">${name}</div>
+         ${doseHtml ? `<div class="med-dose">${doseHtml}</div>` : ""}
+         ${route    ? `<span class="med-route">${route}</span>` : ""}
+       </div>`,
+      sel => {
+        sel ? selMed.add(name) : selMed.delete(name);
+        updateCount("medCount", selMed, "medication");
+        document.getElementById("btnMed").disabled = selMed.size === 0;
+      }
+    );
+    list.appendChild(el);
+  });
+
+  setStep(5);
+  show("secMed");
+}
+
+async function confirmMedications() {
+  if (selMed.size === 0) return;
+  loading("Generating procedures…");
+  try {
+    const data = await api("/select-medications", {
+      session_id: sid,
+      selected: [...selMed],
+    });
+    renderProcedures(data);
+  } catch(e) { showErr(e.message); show("secMed"); }
+}
+
+// ─── STEP 6 : Procedure selection ───────────────────────────
+function renderProcedures(data) {
+  selProc.clear();
+  document.getElementById("procCount").textContent = "";
+  document.getElementById("btnProc").disabled = true;
+
+  const list = document.getElementById("procList");
+  list.innerHTML = "";
+
+  (data.procedures || []).forEach(proc => {
+    const name       = proc.name       || proc;
+    const indication = proc.indication || "";
+
+    const el = makeCheckItem(
+      "proc-item",
+      `<div class="proc-info">
+         <div class="proc-name">${name}</div>
+         ${indication ? `<div class="proc-indication">${indication}</div>` : ""}
+       </div>`,
+      sel => {
+        sel ? selProc.add(name) : selProc.delete(name);
+        updateCount("procCount", selProc, "procedure");
+        document.getElementById("btnProc").disabled = selProc.size === 0;
+      }
+    );
+    list.appendChild(el);
+  });
+
+  setStep(6);
+  show("secProc");
+}
+
+function confirmProcedures() {
+  if (selProc.size === 0) return;
+  renderSummary();
+}
+
+// ─── STEP 7 : Summary ───────────────────────────────────────
+function renderSummary() {
+  document.getElementById("summaryComplaint").textContent = `Chief complaint: ${complaint}`;
+
+  function fill(ulId, set) {
+    const ul = document.getElementById(ulId);
+    ul.innerHTML = "";
+    set.forEach(name => {
+      const li = document.createElement("li");
+      li.textContent = name;
+      ul.appendChild(li);
+    });
+  }
+
+  fill("sumDiag", selDiag);
+  fill("sumInv",  selInv);
+  fill("sumMed",  selMed);
+  fill("sumProc", selProc);
+
+  setStep(7);   // visually "all done" — marks step 6 done
+  show("secSummary");
+}
+
+// ─── Print ───────────────────────────────────────────────────
+function printPlan() { window.print(); }
+
+// ─── Restart ─────────────────────────────────────────────────
+function restart() {
+  sid = null; qNum = 0; complaint = ""; redFlag = false;
+  selDiag.clear(); selInv.clear(); selMed.clear(); selProc.clear();
+  document.getElementById("inComplaint").value = "";
+  document.getElementById("inHistory").value   = "";
+  clearErr(); setStep(1); show("secInput");
+}
+
+// Init
+setStep(1);
+</script>
+</body>
+</html>
