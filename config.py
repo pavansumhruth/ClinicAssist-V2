@@ -1,5 +1,5 @@
 # ── Server ──────────────────────────────────────────────────
-QWEN_URL = "http://localhost:8080/completion"
+QWEN_URL = "http://localhost:8006/completion"
 
 # ── LLM token limits (separate per task) ────────────────────
 MAX_TOKENS_QUESTION      = 128

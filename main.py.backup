@@ -205,9 +205,3 @@ def select_medications(req: SelectMedicationsRequest):
         "session_id": req.session_id,
         "procedures": proc["procedures"],          # [{name, indication}, ...]
     }
-# Serve frontend
-from fastapi.responses import FileResponse
-
-@app.get("/")
-def serve_frontend():
-    return FileResponse("index.html")

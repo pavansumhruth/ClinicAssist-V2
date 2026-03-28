@@ -953,8 +953,8 @@ function logDebug(message, style = '') {
 // ─── Generate Notes (Call 8004 API) ────────────────────────
 async function generateNotes(section) {
   console.log("═══════════════════════════════════════════════");
-  console.log("GENERATE NOTES CLICKED - Section:", section);
-  logDebug("GENERATE NOTES - Section: " + section);
+  console.log("🔵 GENERATE NOTES CLICKED - Section:", section);
+  logDebug("🔵 GENERATE NOTES - Section: " + section);
 
   // Map section to correct button ID and textarea ID
   const btnMap = {
@@ -973,13 +973,11 @@ async function generateNotes(section) {
   const btnId = btnMap[section];
   const notesId = notesMap[section];
   const btn = document.getElementById(btnId);
-  const notesArea = document.getElementById(notesId);
 
   btn.disabled = true;
-  btn.textContent = "Streaming...";
-  notesArea.value = "";  // Clear existing content
-  console.log("Button disabled, textarea cleared");
-  logDebug("Button state: Streaming...");
+  btn.textContent = "⏳ Generating...";
+  console.log("✓ Button disabled, showing loading state");
+  logDebug("✓ Button state: Loading...");
 
   try {
     // Build context
@@ -995,79 +993,65 @@ async function generateNotes(section) {
       debug: true
     };
     console.log("✓ Request payload:", JSON.stringify(payload, null, 2));
-    logDebug("✓ Payload ready - calling STREAMING API...");
-    console.log("Calling API:", BASE_AUTOCOMPLETE + "/api/v1/generate-summary-stream");
-    logDebug("URL: " + BASE_AUTOCOMPLETE + "/api/v1/generate-summary-stream");
+    logDebug("✓ Payload ready - calling 8004 API...");
+    console.log("🌐 Calling API:", BASE_AUTOCOMPLETE + "/api/v1/generate-summary");
+    logDebug("🌐 URL: " + BASE_AUTOCOMPLETE + "/api/v1/generate-summary");
 
-    // Stream API call
+    // Make API call
     const startTime = Date.now();
-    const response = await fetch(BASE_AUTOCOMPLETE + "/api/v1/generate-summary-stream", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
+    const data = await api(BASE_AUTOCOMPLETE, "/api/v1/generate-summary", payload);
+    const elapsed = Date.now() - startTime;
 
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    console.log("✅ API Response received in", elapsed + "ms");
+    console.log("📦 Full response:", JSON.stringify(data, null, 2));
+    logDebug("✅ Response received in " + elapsed + "ms");
+
+    // Display the completion
+    const notesArea = document.getElementById(notesId);
+    if (data.summary) {
+      notesArea.value = data.summary;
+      console.log("✓ Notes updated in text area");
+      console.log("📝 Summary text:", data.summary);
+      logDebug("✓ Notes updated (" + data.summary.length + " chars)");
+
+      // Show success message briefly
+      btn.textContent = "✓ Generated!";
+      setTimeout(() => {
+        btn.textContent = "Generate AI Notes";
+      }, 2000);
+    } else {
+      notesArea.value = "No summary generated.";
+      console.warn("⚠️ No summary in response");
+      logDebug("⚠️ No summary in response");
     }
 
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = "";
-
-    // Read stream
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split("\n");
-      buffer = lines.pop() || "";  // Keep incomplete line in buffer
-
-      for (const line of lines) {
-        if (line.startsWith("data: ")) {
-          try {
-            const data = JSON.parse(line.slice(6));
-
-            if (data.token) {
-              // Append token to textarea
-              notesArea.value += data.token;
-              // Auto-scroll to bottom
-              notesArea.scrollTop = notesArea.scrollHeight;
-            }
-
-            if (data.done) {
-              const elapsed = Date.now() - startTime;
-              console.log("Streaming completed in", elapsed + "ms");
-              logDebug("Streaming done in " + elapsed + "ms");
-              logDebug("Notes updated (" + notesArea.value.length + " chars)");
-
-              // Show success
-              btn.textContent = "Generated!";
-              setTimeout(() => {
-                btn.textContent = "Generate AI Notes";
-              }, 2000);
-            }
-          } catch (e) {
-            console.warn("Failed to parse SSE line:", line, e);
-          }
-        }
-      }
+    // Show debug info
+    if (data.debug) {
+      console.log("🐛 Debug Info from 8004:");
+      console.log("  - Section:", data.debug.section || section);
+      console.log("  - Chunks retrieved:", data.debug.chunks_retrieved || "N/A");
+      console.log("  - Prompt tokens:", data.debug.prompt_tokens || "N/A");
+      console.log("  - LLM time:", data.debug.llm_time_ms + "ms" || "N/A");
+      console.log("  - Total time:", data.debug.total_time_ms + "ms" || "N/A");
+      logDebug("🐛 Section: " + (data.debug.section || section));
+      logDebug("🐛 Chunks: " + (data.debug.chunks_retrieved || "N/A"));
+      logDebug("🐛 Prompt tokens: " + (data.debug.prompt_tokens || "N/A"));
+      logDebug("🐛 LLM time: " + (data.debug.llm_time_ms || "N/A") + "ms");
     }
 
   } catch(e) {
-    console.error("ERROR streaming notes:", e);
+    console.error("❌ ERROR generating notes:", e);
     console.error("Error stack:", e.stack);
-    logDebug("ERROR: " + e.message);
+    logDebug("❌ ERROR: " + e.message);
     showErr("Failed to generate notes: " + e.message);
-    btn.textContent = "Failed - Retry";
+    btn.textContent = "❌ Failed - Retry";
     setTimeout(() => {
       btn.textContent = "Generate AI Notes";
     }, 3000);
   } finally {
     btn.disabled = false;
-    console.log("Button re-enabled");
-    logDebug("Button re-enabled");
+    console.log("✓ Button re-enabled");
+    logDebug("✓ Button re-enabled");
     console.log("═══════════════════════════════════════════════");
   }
 }
