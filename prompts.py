@@ -31,6 +31,7 @@ Option format rules:
     Severity/scale         →  3-4 options e.g. ["Mild","Moderate","Severe"]
     Category question      →  3-5 options e.g. ["None","Localized","Spreading"]
 - Do NOT repeat any previously asked question
+- If clinical history mentions previous visits, prioritize questions about what has CHANGED since the last visit rather than asking from scratch
 <|im_end|>
 <|im_start|>user
 Chief complaint : {session['complaint']}
