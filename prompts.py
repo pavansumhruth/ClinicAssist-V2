@@ -70,7 +70,7 @@ def build_question_prompt(session: dict) -> str:
     else:
         prev = "Questions already asked: none"
 
-    prompt=f"""<|im_start|>system
+    return f"""<|im_start|>system
 You are a clinical triage assistant.
 Generate ONE short follow-up question with answer options that helps narrow the diagnosis.
 
@@ -98,17 +98,10 @@ Follow-up history    : {_format_follow_up_history(session.get('follow_up_history
 <|im_end|>
 <|im_start|>assistant
 """
-    print("[DEBUG PROMPT] ── Full prompt going to LLM ──────────────────")
-    print(prompt)
-    print("[DEBUG PROMPT] ─────────────────────────────────────────────")
-    print("[DEBUG PROMPT - QUESTION]")
-    print(f"  current consultation    : {_format_current_consultation(session.get('current_consultation', {}))}")
-    print(f"  Follow-up history    : {_format_follow_up_history(session.get('follow_up_history', []))}")
-    return prompt
 
 def build_diagnosis_prompt(session: dict) -> str:
     qa = "\n".join(f"  {q} → {a}" for q, a in zip(session["questions"], session["answers"]))
-    prompt= f"""<|im_start|>system
+    return f"""<|im_start|>system
 You are a clinical assistant. List 6-10 differential diagnoses ranked most to least likely.
 Use only "high", "medium", or "low" for likelihood. Common conditions first.
 <|im_end|>
