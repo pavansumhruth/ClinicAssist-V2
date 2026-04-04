@@ -3,13 +3,15 @@ import uuid
 _sessions: dict = {}
 
 
-def create_session(complaint: str, history: str) -> str:
+def create_session(complaint: str, history: str,follow_up_history:list,current_consultation:dict) -> str:
     sid = str(uuid.uuid4())
     _sessions[sid] = {
         "complaint":  complaint,
         "history":    history,
         # triage Q&A
         "questions":  [],
+        "follow_up_history": follow_up_history or [],
+        "current_consultation":  current_consultation or {},
         "answers":    [],
         "count":      0,
         # selected values from each step

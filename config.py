@@ -1,6 +1,6 @@
 # ── Server ──────────────────────────────────────────────────
-QWEN_URL = "http://localhost:8006/completion"
-
+QWEN_URL = "http://34.158.32.252:8006/completion"
+MEDICAL_API_BASE = "http://34.158.32.252:8007"
 # ── LLM token limits (separate per task) ────────────────────
 MAX_TOKENS_QUESTION      = 128
 MAX_TOKENS_DIAGNOSIS     = 350

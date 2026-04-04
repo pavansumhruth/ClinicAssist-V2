@@ -3,8 +3,8 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional, List
-
-from config import MAX_QUESTIONS, RETRY_COUNT
+import requests
+from config import MAX_QUESTIONS, RETRY_COUNT , MEDICAL_API_BASE
 from state import create_session, get_session, save_answer
 from llm import (
     generate_question_raw, generate_diagnosis_raw,
@@ -30,8 +30,10 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], all
 # ── Request models ────────────────────────────────────────────
 
 class StartRequest(BaseModel):
+    patient_id:str
     chief_complaint: str
     clinical_history: Optional[str] = ""
+
 
 class AnswerRequest(BaseModel):
     session_id: str
@@ -81,14 +83,47 @@ def _generate(raw_fn, prompt_fn, validate_fn, session, label: str) -> dict:
     raise HTTPException(status_code=500,
         detail=f"Could not generate valid {label} after {RETRY_COUNT} attempts.")
 
-
+def _fetch_patient_context(patient_id: str, complaint: str) -> tuple[dict, list]:
+    try:
+        url = f"{MEDICAL_API_BASE}/api/v1/patient/{patient_id}/complaint/latest"
+        print(f"[DEBUG] Calling medical API: {url} with complaint={complaint}")
+        response = requests.get(url, params={"complaint": complaint}, timeout=10)
+        print(f"[DEBUG] Medical API status code: {response.status_code}")
+        if response.status_code == 404:
+            print("[DEBUG] No previous consultation found — using empty fallback")
+            return {}, []
+        response.raise_for_status()
+        data = response.json()
+        follow_up_history = data.get("follow_up_history", [])
+        print(f"[DEBUG] current_consultation visit_date : {data.get('visit_date')}")
+        print(f"[DEBUG] current_consultation visit_number: {data.get('visit_number')}")
+        print(f"[DEBUG] follow_up_history count       : {len(follow_up_history)}")
+        return data, follow_up_history
+    except Exception as e:
+        print(f"[DEBUG] Exception while fetching patient context: {str(e)}")
+        return {}, []
 # ── STEP 1 : /start ───────────────────────────────────────────
 # Create session, return first triage question.
 
 @app.post("/start")
 def start(req: StartRequest):
-    sid = create_session(req.chief_complaint, req.clinical_history or "")
+    print(f"[DEBUG] /start called — patient_id={req.patient_id}, complaint={req.chief_complaint}")
+    current_consultation, follow_up_history = _fetch_patient_context(
+        req.patient_id, req.chief_complaint
+    )
+    print(f"[DEBUG] Session will be created with:")
+    print(f"[DEBUG]   current_consultation empty : {current_consultation == {}}")
+    print(f"[DEBUG]   follow_up_history count : {len(follow_up_history)}")
+    sid = create_session(
+        req.chief_complaint,
+        req.clinical_history or "",
+        follow_up_history,
+        current_consultation,
+    )
+    print(f"[DEBUG] Session created — sid={sid}")
     session = get_session(sid)
+    print(f"[DEBUG] Session follow_up_history count : {len(session.get('follow_up_history', []))}")
+    print(f"[DEBUG] Session current_consultation date  : {session.get('current_consultation', {}).get('visit_date')}")
     q = _generate(generate_question_raw, build_question_prompt, validate_question, session, "question")
     session["pending_question"] = q["question"]
     return {
