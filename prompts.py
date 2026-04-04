@@ -1,3 +1,59 @@
+def _format_follow_up_history(follow_up_history: list) -> str:
+    if not follow_up_history:
+        return "None"
+    parts = []
+    for i, entry in enumerate(follow_up_history, 1):
+        date       = entry.get("visit_date", "Unknown date")
+        visit_no   = entry.get("visit_number", i)
+        complaints = ", ".join(entry.get("chief_complaints", []))
+        diagnoses  = ", ".join(
+            d["name"] for d in entry.get("diagnoses", []) if d.get("selected")
+        )
+        medications = ", ".join(
+            m["name"] for m in entry.get("medications", []) if m.get("selected")
+        )
+        investigations = ", ".join(
+            inv["name"] for inv in entry.get("investigations", []) if inv.get("selected")
+        )
+        advice     = entry.get("advice", "")
+        parts.append(
+            f"  Visit {visit_no} ({date}): Complaint: {complaints} | "
+            f"Diagnoses: {diagnoses} | Medications: {medications} | "
+            f"Investigations: {investigations} | Advice: {advice}"
+        )
+    return "\n".join(parts)
+def _format_current_consultation(last: dict) -> str:
+    if not last:
+        return "None"
+    date         = last.get("visit_date", "Unknown date")
+    visit_no     = last.get("visit_number", "")
+    complaints   = ", ".join(last.get("chief_complaints", []))
+    diagnoses    = ", ".join(
+        d["name"] for d in last.get("diagnoses", []) if d.get("selected")
+    )
+    medications  = ", ".join(
+        m["name"] for m in last.get("medications", []) if m.get("selected")
+    )
+    investigations = ", ".join(
+        i["name"] for i in last.get("investigations", []) if i.get("selected")
+    )
+    key_questions = ", ".join(
+        f"{kq['question']} → {kq['answer']}"
+        for kq in last.get("key_questions", [])
+    )
+    advice       = last.get("advice", "")
+    vitals       = last.get("vitals") or {}
+    vitals_str   = (
+        f"Temp: {vitals.get('temp_celsius')}°C, BP: {vitals.get('bp_mmhg')}, "
+        f"Weight: {vitals.get('weight_kg')}kg"
+        if vitals else "None"
+    )
+    return (
+        f"  Visit {visit_no} ({date}): Complaints: {complaints} | "
+        f"Vitals: {vitals_str} | Key Q&A: {key_questions} | "
+        f"Diagnoses: {diagnoses} | Investigations: {investigations} | "
+        f"Medications: {medications} | Advice: {advice}"
+    )
 def build_question_prompt(session: dict) -> str:
     """
     Build the prompt for the next triage question.
@@ -14,7 +70,7 @@ def build_question_prompt(session: dict) -> str:
     else:
         prev = "Questions already asked: none"
 
-    return f"""<|im_start|>system
+    prompt=f"""<|im_start|>system
 You are a clinical triage assistant.
 Generate ONE short follow-up question with answer options that helps narrow the diagnosis.
 
@@ -36,20 +92,31 @@ Option format rules:
 <|im_start|>user
 Chief complaint : {session['complaint']}
 Clinical history: {session['history'] or 'None'}
+current consultation    : {_format_current_consultation(session.get('current_consultation', {}))}
+Follow-up history    : {_format_follow_up_history(session.get('follow_up_history', []))}
 {prev}
 <|im_end|>
 <|im_start|>assistant
 """
+    print("[DEBUG PROMPT] ── Full prompt going to LLM ──────────────────")
+    print(prompt)
+    print("[DEBUG PROMPT] ─────────────────────────────────────────────")
+    print("[DEBUG PROMPT - QUESTION]")
+    print(f"  current consultation    : {_format_current_consultation(session.get('current_consultation', {}))}")
+    print(f"  Follow-up history    : {_format_follow_up_history(session.get('follow_up_history', []))}")
+    return prompt
 
 def build_diagnosis_prompt(session: dict) -> str:
     qa = "\n".join(f"  {q} → {a}" for q, a in zip(session["questions"], session["answers"]))
-    return f"""<|im_start|>system
+    prompt= f"""<|im_start|>system
 You are a clinical assistant. List 6-10 differential diagnoses ranked most to least likely.
 Use only "high", "medium", or "low" for likelihood. Common conditions first.
 <|im_end|>
 <|im_start|>user
 Chief complaint : {session['complaint']}
 Clinical history: {session['history'] or 'None'}
+current consultation    : {_format_current_consultation(session.get('current_consultation', {}))}
+Follow-up history    : {_format_follow_up_history(session.get('follow_up_history', []))}
 Clinical Q&A:
 {qa}
 <|im_end|>
@@ -67,6 +134,8 @@ For each investigation provide a short reason (why it is needed). Be specific an
 <|im_start|>user
 Chief complaint : {session['complaint']}
 Clinical history: {session['history'] or 'None'}
+current consultation    : {_format_current_consultation(session.get('current_consultation', {}))}
+Follow-up history    : {_format_follow_up_history(session.get('follow_up_history', []))}
 Clinical Q&A:
 {qa}
 Selected diagnoses: {diagnoses}
@@ -85,6 +154,8 @@ For each medication provide the typical adult dose and route of administration.
 <|im_start|>user
 Chief complaint    : {session['complaint']}
 Clinical history   : {session['history'] or 'None'}
+current consultation    : {_format_current_consultation(session.get('current_consultation', {}))}
+Follow-up history    : {_format_follow_up_history(session.get('follow_up_history', []))}
 Diagnoses          : {diagnoses}
 Investigations done: {investigations}
 <|im_end|>
@@ -103,6 +174,8 @@ For each procedure give a clear indication (why it is needed for this patient).
 <|im_start|>user
 Chief complaint    : {session['complaint']}
 Clinical history   : {session['history'] or 'None'}
+current consultation    : {_format_current_consultation(session.get('current_consultation', {}))}
+Follow-up history    : {_format_follow_up_history(session.get('follow_up_history', []))}
 Diagnoses          : {diagnoses}
 Investigations done: {investigations}
 Medications given  : {medications}
