@@ -1,23 +1,23 @@
 # ── Server ──────────────────────────────────────────────────
-QWEN_URL = "http://34.158.32.252:8006/completion"
-MEDICAL_API_BASE = "http://34.158.32.252:8007"
+QWEN_URL = "http://34.180.37.249:8006/completion"
+MEDICAL_API_BASE = "http://34.180.37.249:8000" 
 # ── LLM token limits (separate per task) ────────────────────
 MAX_TOKENS_QUESTION      = 128
-MAX_TOKENS_DIAGNOSIS     = 350
-MAX_TOKENS_INVESTIGATIONS = 400
-MAX_TOKENS_MEDICATIONS   = 400
-MAX_TOKENS_PROCEDURES    = 350
+MAX_TOKENS_DIAGNOSIS     = 300
+MAX_TOKENS_INVESTIGATIONS = 600
+MAX_TOKENS_MEDICATIONS   = 600
+MAX_TOKENS_PROCEDURES    = 600
 
 # ── LLM other settings ──────────────────────────────────────
 TEMPERATURE  = 0.3
 RETRY_COUNT  = 5
 
 # ── Request timeouts ─────────────────────────────────────────
-TIMEOUT_QUESTION      = 30
-TIMEOUT_DIAGNOSIS     = 60
-TIMEOUT_INVESTIGATIONS = 120
-TIMEOUT_MEDICATIONS   = 120
-TIMEOUT_PROCEDURES    = 60
+TIMEOUT_QUESTION      = 90
+TIMEOUT_DIAGNOSIS     = 150
+TIMEOUT_INVESTIGATIONS = 180
+TIMEOUT_MEDICATIONS   = 200
+TIMEOUT_PROCEDURES    = 200
 
 # ── Session ──────────────────────────────────────────────────
 MAX_QUESTIONS = 5

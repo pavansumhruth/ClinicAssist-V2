@@ -11,7 +11,7 @@ def create_session(complaint: str, history: str,follow_up_history:list,current_c
         # triage Q&A
         "questions":  [],
         "follow_up_history": follow_up_history or [],
-        "current_consultation":  current_consultation or {},
+        "current_consultation":  current_consultation or {}, 
         "answers":    [],
         "count":      0,
         # selected values from each step

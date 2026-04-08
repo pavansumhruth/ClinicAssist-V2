@@ -6,7 +6,8 @@ It will print recommended values to paste into config.py.
 """
 import requests, time, statistics
 
-URL = "http://localhost:8080/completion"
+from config import QWEN_URL
+
 RUNS = 3   # number of test calls per category
 
 def call(label, body, runs=RUNS):
@@ -14,7 +15,7 @@ def call(label, body, runs=RUNS):
     for i in range(runs):
         t = time.time()
         try:
-            r = requests.post(URL, json=body, timeout=120)
+            r = requests.post(QWEN_URL, json=body, timeout=120)
             r.raise_for_status()
             elapsed = time.time() - t
             out = r.json().get("content", "")

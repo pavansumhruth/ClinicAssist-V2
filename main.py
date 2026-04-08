@@ -6,6 +6,7 @@ from typing import Optional, List
 import requests
 from config import MAX_QUESTIONS, RETRY_COUNT , MEDICAL_API_BASE
 from state import create_session, get_session, save_answer
+from rag_retrival import _clinical_history_chunk
 from llm import (
     generate_question_raw, generate_diagnosis_raw,
     generate_investigations_raw, generate_medications_raw, generate_procedures_raw,
@@ -32,6 +33,7 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], all
 class StartRequest(BaseModel):
     patient_id:str
     chief_complaint: str
+    complaint_chain: str
     clinical_history: Optional[str] = ""
 
 
@@ -70,6 +72,7 @@ def _generate(raw_fn, prompt_fn, validate_fn, session, label: str) -> dict:
     Raises 503 on connection error, 500 if retries exhausted.
     """
     prompt = prompt_fn(session)
+    print(f"[DEBUG] SURYA , VIKAS ,SYS PROMPT TESTING FOR GEN Q/A{prompt}") 
     for attempt in range(1, RETRY_COUNT + 1):
         try:
             raw = raw_fn(prompt)
@@ -83,22 +86,34 @@ def _generate(raw_fn, prompt_fn, validate_fn, session, label: str) -> dict:
     raise HTTPException(status_code=500,
         detail=f"Could not generate valid {label} after {RETRY_COUNT} attempts.")
 
-def _fetch_patient_context(patient_id: str, complaint: str) -> tuple[dict, list]:
+def _fetch_patient_context(patient_id: str, complaint_chain: str) -> tuple[dict, list]:
     try:
         url = f"{MEDICAL_API_BASE}/api/v1/patient/{patient_id}/complaint/latest"
-        print(f"[DEBUG] Calling medical API: {url} with complaint={complaint}")
-        response = requests.get(url, params={"complaint": complaint}, timeout=10)
+        print(f"[DEBUG] Calling medical API: {url} with complaint_chain={complaint_chain}")
+
+        response = requests.get(
+            url,
+            params={"complaint_chain": complaint_chain},
+            timeout=10
+        )
+
         print(f"[DEBUG] Medical API status code: {response.status_code}")
+
         if response.status_code == 404:
             print("[DEBUG] No previous consultation found — using empty fallback")
             return {}, []
+
         response.raise_for_status()
+
         data = response.json()
         follow_up_history = data.get("follow_up_history", [])
+
         print(f"[DEBUG] current_consultation visit_date : {data.get('visit_date')}")
         print(f"[DEBUG] current_consultation visit_number: {data.get('visit_number')}")
         print(f"[DEBUG] follow_up_history count       : {len(follow_up_history)}")
+
         return data, follow_up_history
+
     except Exception as e:
         print(f"[DEBUG] Exception while fetching patient context: {str(e)}")
         return {}, []
@@ -107,16 +122,21 @@ def _fetch_patient_context(patient_id: str, complaint: str) -> tuple[dict, list]
 
 @app.post("/start")
 def start(req: StartRequest):
-    print(f"[DEBUG] /start called — patient_id={req.patient_id}, complaint={req.chief_complaint}")
+    print(f"[DEBUG] /start called — patient_id={req.patient_id}, complaint={req.complaint_chain}, chief_complaint={req.chief_complaint}")
     current_consultation, follow_up_history = _fetch_patient_context(
-        req.patient_id, req.chief_complaint
+    req.patient_id,
+    req.complaint_chain
     )
+
+    _,_,patient_history_chunk = _clinical_history_chunk(req.patient_id,req.chief_complaint)
+
     print(f"[DEBUG] Session will be created with:")
+    print(f"[DEBUG] VICKKY")
     print(f"[DEBUG]   current_consultation empty : {current_consultation == {}}")
     print(f"[DEBUG]   follow_up_history count : {len(follow_up_history)}")
     sid = create_session(
         req.chief_complaint,
-        req.clinical_history or "",
+        patient_history_chunk,
         follow_up_history,
         current_consultation,
     )

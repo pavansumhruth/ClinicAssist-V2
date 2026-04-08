@@ -48,8 +48,8 @@ The system guides the clinician through a 5-question adaptive triage interview, 
 | **Session Storage** | In-process Python dict (ephemeral, no external database) |
 | **Frontend** | Vanilla HTML5 + CSS3 + Vanilla JavaScript (single `index.html`) |
 | **Frontend Fonts** | [IBM Plex Sans](https://fonts.google.com/specimen/IBM+Plex+Sans) + [IBM Plex Mono](https://fonts.google.com/specimen/IBM+Plex+Mono) via Google Fonts |
-| **Medical Data Backend** | Internal REST API at `MEDICAL_API_BASE` (separate service, `http://34.158.32.252:8007`) |
-| **AI Notes Streaming** | Separate autocomplete service at `BASE_AUTOCOMPLETE` (`http://34.158.32.252:8004`) via SSE (Server-Sent Events) |
+| **Medical Data Backend** | Internal REST API at `MEDICAL_API_BASE` (separate service, `http://34.180.37.249:8007`) |
+| **AI Notes Streaming** | Separate optional autocomplete service at `BASE_AUTOCOMPLETE` (`http://34.180.37.249:8004`) via SSE (Server-Sent Events). In this deployment, port 8004 may be unavailable. |
 | **Python** | 3.12 (derived from `auto_comp/pyvenv.cfg`) |
 | **CORS Middleware** | FastAPI `CORSMiddleware` (all origins allowed) |
 | **Logging** | Python `logging` (DEBUG level) |
@@ -104,12 +104,13 @@ ClinicAssist-V2/
 │                            # vanilla JS. Implements a 7-step clinical workflow: Input →
 │                            # Questions → Diagnosis → Investigations → Medications →
 │                            # Procedures → Summary. Connects to both the triage API
-│                            # (port 9000) and the autocomplete/notes API (port 8004).
+│                            # (port 9000) and an optional autocomplete/notes API (port 8004).
 │                            # Includes a hidden debug console panel.
 │
 ├── Benchmark.py             # Standalone benchmarking script. Runs 3 test calls per
 │                            # category (question with grammar, question without grammar,
-│                            # diagnosis, investigations) against localhost:8080 and
+│                            # diagnosis, investigations) against the Qwen completion URL
+│                            # from config.py (currently port 8006) and
 │                            # recommends timeout values to paste into config.py.
 │
 ├── Read_Me                  # Original plain-text quick-start notes (not a proper README).
@@ -143,7 +144,7 @@ ClinicAssist-V2/
 
 - Python 3.12+
 - `llama.cpp` compiled and running with a Qwen-compatible GGUF model
-- Access to the internal medical backend API (currently hardcoded to `34.158.32.252:8007`)
+- Access to the internal medical backend API (currently hardcoded to `34.180.37.249:8007`)
 
 ### Step 1 — Clone the repository
 
@@ -176,7 +177,7 @@ cd ~/llama.cpp/build/bin
 ./llama-server -m ~/models/qwen.gguf -c 4096 -t 8 --parallel 1 --port 8006
 ```
 
-> The model file and path are not defined in this repository. You must supply your own Qwen GGUF model. The original `Read_Me` references a `BioMistral-7B.Q4_K_M.gguf` at port 8081 — that is from an older version. The current `config.py` points to port 8006 on `34.158.32.252`.
+> The model file and path are not defined in this repository. You must supply your own Qwen GGUF model. The original `Read_Me` references a `BioMistral-7B.Q4_K_M.gguf` at port 8081 — that is from an older version. The current `config.py` points to port 8006 on `34.180.37.249`.
 
 ### Step 5 — (Optional) Tune timeouts with Benchmark.py
 
@@ -194,21 +195,21 @@ Paste the recommended values into `config.py`.
 uvicorn main:app --reload --log-level debug --port 9000
 ```
 
-> The frontend in `index.html` is hardcoded to call `http://34.158.32.252:9000` as `BASE_TRIAGE`. If you run locally, you must either update that constant in `index.html` or expose the server on that IP.
+> The frontend in `index.html` is hardcoded to call `http://34.180.37.249:9000` as `BASE_TRIAGE`. If you run locally, you must either update that constant in `index.html` or expose the server on that IP.
 
 ### Step 7 — Serve the frontend
 
 The FastAPI app serves `index.html` directly at the root path `/` via `FileResponse`. Simply open:
 
 ```
-http://localhost:9000/
+http://34.180.37.249:9000/
 ```
 
 Or serve it separately (for development):
 
 ```bash
 python3 -m http.server 5500
-# then open http://localhost:5500
+# then open http://34.180.37.249:5500
 ```
 
 ---
@@ -221,8 +222,8 @@ The following constants in `config.py` should be treated as the effective config
 
 | Constant | Default Value | Description |
 |---|---|---|
-| `QWEN_URL` | `http://34.158.32.252:8006/completion` | The llama.cpp HTTP server `/completion` endpoint for the Qwen model. |
-| `MEDICAL_API_BASE` | `http://34.158.32.252:8007` | Base URL of the internal medical data backend that stores patient consultation history. |
+| `QWEN_URL` | `http://34.180.37.249:8006/completion` | The llama.cpp HTTP server `/completion` endpoint for the Qwen model. |
+| `MEDICAL_API_BASE` | `http://34.180.37.249:8007` | Base URL of the internal medical data backend that stores patient consultation history. |
 | `MAX_TOKENS_QUESTION` | `128` | Maximum tokens the LLM can generate for a triage question. |
 | `MAX_TOKENS_DIAGNOSIS` | `350` | Maximum tokens for a differential diagnosis list. |
 | `MAX_TOKENS_INVESTIGATIONS` | `400` | Maximum tokens for an investigations list. |
@@ -241,8 +242,8 @@ The following constants in `config.py` should be treated as the effective config
 
 | JS Constant | Value | Description |
 |---|---|---|
-| `BASE_TRIAGE` | `http://34.158.32.252:9000` | The ClinicAssist FastAPI backend base URL. |
-| `BASE_AUTOCOMPLETE` | `http://34.158.32.252:8004` | Separate AI notes/autocomplete streaming service. |
+| `BASE_TRIAGE` | `http://34.180.37.249:9000` | The ClinicAssist FastAPI backend base URL. |
+| `BASE_AUTOCOMPLETE` | `http://34.180.37.249:8004` | Separate optional AI notes/autocomplete streaming service (currently unreachable if port 8004 is down). |
 | `PATIENT_ID` | `791427b4-9cc4-8bcc-3fee-e3e14b6d3fea` | Hardcoded patient UUID sent with every `/start` call and every AI Notes generation call. |
 | `MAX_Q` | `5` | Mirrors `MAX_QUESTIONS` on the frontend. |
 
@@ -266,6 +267,7 @@ The following constants in `config.py` should be treated as the effective config
 ┌──────────────────────┐     ┌────────────────────────────┐
 │  ClinicAssist V2     │     │  Autocomplete/Notes Service │
 │  FastAPI (port 9000) │     │  (port 8004) — SEPARATE    │
+│                      │     │  Optional and may be down  │
 │                      │     │  Not part of this repo      │
 │  main.py             │     └────────────────────────────┘
 │  ├─ /start           │
@@ -904,7 +906,7 @@ All prompts use the **ChatML format** compatible with Qwen and aligned model con
 | Issue | Location | Details |
 |---|---|---|
 | **Missing `return` in `build_diagnosis_prompt()`** | `prompts.py:123` | The diagnosis prompt string `prompt` is built but never returned. The function returns `None` implicitly. This will cause `_generate()` to pass `None` as the prompt to the LLM, which will likely raise an error or produce unexpected behavior. **This is a bug.** |
-| **Hardcoded IP addresses everywhere** | `config.py`, `index.html` | `QWEN_URL`, `MEDICAL_API_BASE`, `BASE_TRIAGE`, `BASE_AUTOCOMPLETE` are all hardcoded to `34.158.32.252`. No environment variable support. Cannot deploy to a different machine without code edits. |
+| **Hardcoded IP addresses everywhere** | `config.py`, `index.html` | `QWEN_URL`, `MEDICAL_API_BASE`, `BASE_TRIAGE`, `BASE_AUTOCOMPLETE` are all hardcoded to `34.180.37.249`. No environment variable support. Cannot deploy to a different machine without code edits. |
 | **Hardcoded PATIENT_ID in frontend** | `index.html:690` | The frontend sends a fixed UUID (`791427b4-…`) as `patient_id` for every session. Real multi-patient use requires a login/patient selection flow. |
 | **In-memory sessions only** | `state.py` | Sessions are not persisted. A server restart or process crash wipes all active sessions. No Redis or DB backing. |
 | **No session expiry** | `state.py` | Sessions accumulate indefinitely in memory. In production, memory would leak if not bounded. |
@@ -987,3 +989,18 @@ The current `index.html` is functionally very similar to `index.html.backup`. Th
 ---
 
 *This README was generated from reading the actual source code in the ClinicAssist-V2 repository. All details are derived from the code itself, not from assumptions.*
+
+
+
+
+
+ to run qwen 
+
+~/llama.cpp/build/bin/llama-server \
+  -m /home/nathanivikas890_gmail_com/models/qwen2.5-7b-instruct-q4_k_m-00001-of-00002.gguf \
+  --host 0.0.0.0 \
+  --port 8006 \
+  --ctx-size 4096
+
+
+  uvicorn main:app --host 0.0.0.0 --port 9000

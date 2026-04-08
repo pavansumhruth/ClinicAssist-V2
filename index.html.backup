@@ -685,8 +685,8 @@ body {
 
 <script>
 // ─────────────────────────────────────────────────────────
-const BASE_TRIAGE  = "http://34.158.32.252:9000";
-const BASE_AUTOCOMPLETE = "http://34.158.32.252:8004";
+const BASE_TRIAGE  = "http://34.180.37.249:9000";
+const BASE_AUTOCOMPLETE = "http://34.180.37.249:8004";
 const PATIENT_ID = "791427b4-9cc4-8bcc-3fee-e3e14b6d3fea";
 const MAX_Q = 5;
 

@@ -36,7 +36,7 @@ def _call(prompt: str, grammar: str, max_tokens: int, timeout: int) -> str:
     except requests.exceptions.ConnectionError:
         raise RuntimeError(
             f"Cannot reach Qwen at {QWEN_URL}. "
-            "Start llama.cpp:  ./server -m model.gguf --port 8080"
+            "Start llama.cpp on the configured completion port (8006 by default)."
         )
     except requests.exceptions.Timeout:
         raise RuntimeError(

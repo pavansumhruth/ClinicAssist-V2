@@ -1,0 +1,499 @@
+{
+  "meta": {
+    "timestamp": "2026-04-06T10:20:51.352502Z",
+    "triage_base": "http://34.180.37.249:9000",
+    "autocomplete_base": "http://34.180.37.249:8004",
+    "qwen_url": "http://34.180.37.249:8006/completion"
+  },
+  "api_calls": [
+    {
+      "endpoint": "/start",
+      "url": "http://34.180.37.249:9000/start",
+      "request_payload": {
+        "Origin": "http://localhost:5500",
+        "Access-Control-Request-Method": "POST",
+        "Access-Control-Request-Headers": "content-type"
+      },
+      "status": 200,
+      "response_time_s": 0.004,
+      "response": {
+        "raw": "OK"
+      }
+    },
+    {
+      "endpoint": "/start",
+      "url": "http://34.180.37.249:9000/start",
+      "request_payload": {
+        "patient_id": "791427b4-9cc4-8bcc-3fee-e3e14b6d3fea",
+        "chief_complaint": "fever",
+        "clinical_history": "Fever and cough for 3 days"
+      },
+      "status": 200,
+      "response_time_s": 28.802,
+      "response": {
+        "session_id": "52ea8f9e-fbd9-4888-822c-13ad292aea30",
+        "question_number": 1,
+        "total_questions": 5,
+        "question": "Peak temperature?",
+        "options": [
+          "99\u00b0F",
+          "100\u00b0F",
+          "101\u00b0F",
+          "102\u00b0F",
+          "103\u00b0F+"
+        ],
+        "completed": false
+      }
+    },
+    {
+      "endpoint": "/answer",
+      "url": "http://34.180.37.249:9000/answer",
+      "request_payload": {
+        "session_id": "52ea8f9e-fbd9-4888-822c-13ad292aea30",
+        "selected_option": "99\u00b0F"
+      },
+      "status": 200,
+      "response_time_s": 13.639,
+      "response": {
+        "session_id": "52ea8f9e-fbd9-4888-822c-13ad292aea30",
+        "question_number": 2,
+        "total_questions": 5,
+        "question": "Fever since?",
+        "options": [
+          "1 day",
+          "2 days",
+          "3 days",
+          "4+ days"
+        ],
+        "completed": false
+      }
+    },
+    {
+      "endpoint": "/answer",
+      "url": "http://34.180.37.249:9000/answer",
+      "request_payload": {
+        "session_id": "52ea8f9e-fbd9-4888-822c-13ad292aea30",
+        "selected_option": "Yes"
+      },
+      "status": 200,
+      "response_time_s": 9.046,
+      "response": {
+        "session_id": "52ea8f9e-fbd9-4888-822c-13ad292aea30",
+        "question_number": 3,
+        "total_questions": 5,
+        "question": "Cough present?",
+        "options": [
+          "Yes",
+          "No"
+        ],
+        "completed": false
+      }
+    },
+    {
+      "endpoint": "/answer",
+      "url": "http://34.180.37.249:9000/answer",
+      "request_payload": {
+        "session_id": "52ea8f9e-fbd9-4888-822c-13ad292aea30",
+        "selected_option": "Yes"
+      },
+      "status": 200,
+      "response_time_s": 9.9,
+      "response": {
+        "session_id": "52ea8f9e-fbd9-4888-822c-13ad292aea30",
+        "question_number": 4,
+        "total_questions": 5,
+        "question": "Cough severity?",
+        "options": [
+          "Mild",
+          "Moderate",
+          "Severe"
+        ],
+        "completed": false
+      }
+    },
+    {
+      "endpoint": "/answer",
+      "url": "http://34.180.37.249:9000/answer",
+      "request_payload": {
+        "session_id": "52ea8f9e-fbd9-4888-822c-13ad292aea30",
+        "selected_option": "Yes"
+      },
+      "status": 200,
+      "response_time_s": 13.086,
+      "response": {
+        "session_id": "52ea8f9e-fbd9-4888-822c-13ad292aea30",
+        "question_number": 5,
+        "total_questions": 5,
+        "question": "Cough duration?",
+        "options": [
+          "1 day",
+          "2 days",
+          "3 days",
+          "4+ days"
+        ],
+        "completed": false
+      }
+    },
+    {
+      "endpoint": "/answer",
+      "url": "http://34.180.37.249:9000/answer",
+      "request_payload": {
+        "session_id": "52ea8f9e-fbd9-4888-822c-13ad292aea30",
+        "selected_option": "Yes"
+      },
+      "status": 503,
+      "response_time_s": 60.075,
+      "response": {
+        "detail": "Qwen timed out after 60s. Server may be overloaded \u2014 restart llama.cpp and try again."
+      }
+    },
+    {
+      "endpoint": "/api/v1/generate-summary-stream",
+      "url": "http://34.180.37.249:8004/api/v1/generate-summary-stream",
+      "request_payload": {
+        "patient_id": "791427b4-9cc4-8bcc-3fee-e3e14b6d3fea",
+        "context": {
+          "chief_complaint": "fever",
+          "questions": [
+            {
+              "question": "Peak temperature?",
+              "answer": "99\u00b0F"
+            },
+            {
+              "question": "Fever since?",
+              "answer": "Yes"
+            },
+            {
+              "question": "Cough present?",
+              "answer": "Yes"
+            },
+            {
+              "question": "Cough severity?",
+              "answer": "Yes"
+            }
+          ],
+          "diagnoses": [],
+          "investigations": [],
+          "medications": []
+        },
+        "section": "medications",
+        "debug": true
+      },
+      "status": "EXCEPTION",
+      "response_time_s": 0.003,
+      "error": "HTTPConnectionPool(host='34.180.37.249', port=8004): Max retries exceeded with url: /api/v1/generate-summary-stream (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7a6cb2b3ea70>: Failed to establish a new connection: [Errno 111] Connection refused'))"
+    },
+    {
+      "endpoint": "/api/v1/generate-summary",
+      "url": "http://34.180.37.249:8004/api/v1/generate-summary",
+      "request_payload": {
+        "patient_id": "791427b4-9cc4-8bcc-3fee-e3e14b6d3fea",
+        "context": {
+          "chief_complaint": "fever",
+          "questions": [
+            {
+              "question": "Peak temperature?",
+              "answer": "99\u00b0F"
+            },
+            {
+              "question": "Fever since?",
+              "answer": "Yes"
+            },
+            {
+              "question": "Cough present?",
+              "answer": "Yes"
+            },
+            {
+              "question": "Cough severity?",
+              "answer": "Yes"
+            }
+          ],
+          "diagnoses": [],
+          "investigations": [],
+          "medications": []
+        },
+        "section": "medications",
+        "debug": true
+      },
+      "status": "EXCEPTION",
+      "response_time_s": 0.006,
+      "error": "HTTPConnectionPool(host='34.180.37.249', port=8004): Max retries exceeded with url: /api/v1/generate-summary (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7a6cb2b3d540>: Failed to establish a new connection: [Errno 111] Connection refused'))"
+    }
+  ],
+  "llm_steps": [
+    {
+      "step": "start_question",
+      "grammar": "question",
+      "status": 200,
+      "elapsed_s": 13.17,
+      "prompt": "<|im_start|>system\nYou are a clinical triage assistant.\nGenerate ONE short follow-up question with answer options that helps narrow the diagnosis.\n\nQuestion format rules:\n- Question must be 2 to 6 words ending with \"?\"\n- Examples: \"Fever since?\", \"Peak temperature?\", \"Activity level?\", \"Rash present?\"\n\nOption format rules:\n- Each option is a short label (1 to 5 words)\n- Number of options must match the question type naturally:\n    Yes / No question      \u2192  2 options  e.g. [\"Yes\", \"No\"]\n    Duration question      \u2192  4-5 options e.g. [\"1 day\",\"2 days\",\"3 days\",\"4+ days\"]\n    Temperature question   \u2192  5 options  e.g. [\"99\u00b0F\",\"100\u00b0F\",\"101\u00b0F\",\"102\u00b0F\",\"103\u00b0F+\"]\n    Severity/scale         \u2192  3-4 options e.g. [\"Mild\",\"Moderate\",\"Severe\"]\n    Category question      \u2192  3-5 options e.g. [\"None\",\"Localized\",\"Spreading\"]\n- Do NOT repeat any previously asked question\n<|im_end|>\n<|im_start|>user\nChief complaint : fever\nClinical history: Fever and cough for 3 days\ncurrent consultation    : None\nFollow-up history    : None\nQuestions already asked: none\n<|im_end|>\n<|im_start|>assistant\n",
+      "sections": {
+        "system_prompt": "You are a clinical triage assistant.\nGenerate ONE short follow-up question with answer options that helps narrow the diagnosis.\n\nQuestion format rules:\n- Question must be 2 to 6 words ending with \"?\"\n- Examples: \"Fever since?\", \"Peak temperature?\", \"Activity level?\", \"Rash present?\"\n\nOption format rules:\n- Each option is a short label (1 to 5 words)\n- Number of options must match the question type naturally:\n    Yes / No question      \u2192  2 options  e.g. [\"Yes\", \"No\"]\n    Duration question      \u2192  4-5 options e.g. [\"1 day\",\"2 days\",\"3 days\",\"4+ days\"]\n    Temperature question   \u2192  5 options  e.g. [\"99\u00b0F\",\"100\u00b0F\",\"101\u00b0F\",\"102\u00b0F\",\"103\u00b0F+\"]\n    Severity/scale         \u2192  3-4 options e.g. [\"Mild\",\"Moderate\",\"Severe\"]\n    Category question      \u2192  3-5 options e.g. [\"None\",\"Localized\",\"Spreading\"]\n- Do NOT repeat any previously asked question",
+        "user_input": "Chief complaint : fever\nClinical history: Fever and cough for 3 days\ncurrent consultation    : None\nFollow-up history    : None\nQuestions already asked: none",
+        "history": "Questions already asked: none"
+      },
+      "output_content": "{\"question\":\"Peak temperature?\",\"options\":[\"99\u00b0F\",\"100\u00b0F\",\"101\u00b0F\",\"102\u00b0F\",\"103\u00b0F+\"]}",
+      "input_tokens": 283,
+      "output_tokens": 35,
+      "total_tokens": 318,
+      "timings": {
+        "cache_n": 282,
+        "prompt_n": 1,
+        "prompt_ms": 608.337,
+        "prompt_per_token_ms": 608.337,
+        "prompt_per_second": 1.6438257084477848,
+        "predicted_n": 35,
+        "predicted_ms": 12546.795,
+        "predicted_per_token_ms": 358.47985714285716,
+        "predicted_per_second": 2.789557014361038
+      },
+      "input_tokens_tokenize": 283,
+      "output_tokens_tokenize": 34
+    },
+    {
+      "step": "answer_1_next_question",
+      "grammar": "question",
+      "status": 200,
+      "elapsed_s": 6.502,
+      "prompt": "<|im_start|>system\nYou are a clinical triage assistant.\nGenerate ONE short follow-up question with answer options that helps narrow the diagnosis.\n\nQuestion format rules:\n- Question must be 2 to 6 words ending with \"?\"\n- Examples: \"Fever since?\", \"Peak temperature?\", \"Activity level?\", \"Rash present?\"\n\nOption format rules:\n- Each option is a short label (1 to 5 words)\n- Number of options must match the question type naturally:\n    Yes / No question      \u2192  2 options  e.g. [\"Yes\", \"No\"]\n    Duration question      \u2192  4-5 options e.g. [\"1 day\",\"2 days\",\"3 days\",\"4+ days\"]\n    Temperature question   \u2192  5 options  e.g. [\"99\u00b0F\",\"100\u00b0F\",\"101\u00b0F\",\"102\u00b0F\",\"103\u00b0F+\"]\n    Severity/scale         \u2192  3-4 options e.g. [\"Mild\",\"Moderate\",\"Severe\"]\n    Category question      \u2192  3-5 options e.g. [\"None\",\"Localized\",\"Spreading\"]\n- Do NOT repeat any previously asked question\n<|im_end|>\n<|im_start|>user\nChief complaint : fever\nClinical history: Fever and cough for 3 days\ncurrent consultation    : None\nFollow-up history    : None\nQuestions already asked:\n  Q: Peak temperature?\n  A: 99\u00b0F\n<|im_end|>\n<|im_start|>assistant\n",
+      "sections": {
+        "system_prompt": "You are a clinical triage assistant.\nGenerate ONE short follow-up question with answer options that helps narrow the diagnosis.\n\nQuestion format rules:\n- Question must be 2 to 6 words ending with \"?\"\n- Examples: \"Fever since?\", \"Peak temperature?\", \"Activity level?\", \"Rash present?\"\n\nOption format rules:\n- Each option is a short label (1 to 5 words)\n- Number of options must match the question type naturally:\n    Yes / No question      \u2192  2 options  e.g. [\"Yes\", \"No\"]\n    Duration question      \u2192  4-5 options e.g. [\"1 day\",\"2 days\",\"3 days\",\"4+ days\"]\n    Temperature question   \u2192  5 options  e.g. [\"99\u00b0F\",\"100\u00b0F\",\"101\u00b0F\",\"102\u00b0F\",\"103\u00b0F+\"]\n    Severity/scale         \u2192  3-4 options e.g. [\"Mild\",\"Moderate\",\"Severe\"]\n    Category question      \u2192  3-5 options e.g. [\"None\",\"Localized\",\"Spreading\"]\n- Do NOT repeat any previously asked question",
+        "user_input": "Chief complaint : fever\nClinical history: Fever and cough for 3 days\ncurrent consultation    : None\nFollow-up history    : None\nQuestions already asked:\n  Q: Peak temperature?\n  A: 99\u00b0F",
+        "history": "Questions already asked:\n  Q: Peak temperature?"
+      },
+      "output_content": "{\"question\":\"Fever with chills?\",\"options\":[\"Yes\",\"No\"]}",
+      "input_tokens": 295,
+      "output_tokens": 17,
+      "total_tokens": 312,
+      "timings": {
+        "cache_n": 294,
+        "prompt_n": 1,
+        "prompt_ms": 376.36,
+        "prompt_per_token_ms": 376.36,
+        "prompt_per_second": 2.657030502710171,
+        "predicted_n": 17,
+        "predicted_ms": 6116.743,
+        "predicted_per_token_ms": 359.8084117647059,
+        "predicted_per_second": 2.779256869219452
+      },
+      "input_tokens_tokenize": 295,
+      "output_tokens_tokenize": 16
+    },
+    {
+      "step": "answer_2_next_question",
+      "grammar": "question",
+      "status": 200,
+      "elapsed_s": 6.631,
+      "prompt": "<|im_start|>system\nYou are a clinical triage assistant.\nGenerate ONE short follow-up question with answer options that helps narrow the diagnosis.\n\nQuestion format rules:\n- Question must be 2 to 6 words ending with \"?\"\n- Examples: \"Fever since?\", \"Peak temperature?\", \"Activity level?\", \"Rash present?\"\n\nOption format rules:\n- Each option is a short label (1 to 5 words)\n- Number of options must match the question type naturally:\n    Yes / No question      \u2192  2 options  e.g. [\"Yes\", \"No\"]\n    Duration question      \u2192  4-5 options e.g. [\"1 day\",\"2 days\",\"3 days\",\"4+ days\"]\n    Temperature question   \u2192  5 options  e.g. [\"99\u00b0F\",\"100\u00b0F\",\"101\u00b0F\",\"102\u00b0F\",\"103\u00b0F+\"]\n    Severity/scale         \u2192  3-4 options e.g. [\"Mild\",\"Moderate\",\"Severe\"]\n    Category question      \u2192  3-5 options e.g. [\"None\",\"Localized\",\"Spreading\"]\n- Do NOT repeat any previously asked question\n<|im_end|>\n<|im_start|>user\nChief complaint : fever\nClinical history: Fever and cough for 3 days\ncurrent consultation    : None\nFollow-up history    : None\nQuestions already asked:\n  Q: Peak temperature?\n  A: 99\u00b0F\n  Q: Fever since?\n  A: Yes\n<|im_end|>\n<|im_start|>assistant\n",
+      "sections": {
+        "system_prompt": "You are a clinical triage assistant.\nGenerate ONE short follow-up question with answer options that helps narrow the diagnosis.\n\nQuestion format rules:\n- Question must be 2 to 6 words ending with \"?\"\n- Examples: \"Fever since?\", \"Peak temperature?\", \"Activity level?\", \"Rash present?\"\n\nOption format rules:\n- Each option is a short label (1 to 5 words)\n- Number of options must match the question type naturally:\n    Yes / No question      \u2192  2 options  e.g. [\"Yes\", \"No\"]\n    Duration question      \u2192  4-5 options e.g. [\"1 day\",\"2 days\",\"3 days\",\"4+ days\"]\n    Temperature question   \u2192  5 options  e.g. [\"99\u00b0F\",\"100\u00b0F\",\"101\u00b0F\",\"102\u00b0F\",\"103\u00b0F+\"]\n    Severity/scale         \u2192  3-4 options e.g. [\"Mild\",\"Moderate\",\"Severe\"]\n    Category question      \u2192  3-5 options e.g. [\"None\",\"Localized\",\"Spreading\"]\n- Do NOT repeat any previously asked question",
+        "user_input": "Chief complaint : fever\nClinical history: Fever and cough for 3 days\ncurrent consultation    : None\nFollow-up history    : None\nQuestions already asked:\n  Q: Peak temperature?\n  A: 99\u00b0F\n  Q: Fever since?\n  A: Yes",
+        "history": "Questions already asked:\n  Q: Peak temperature?\n  Q: Fever since?"
+      },
+      "output_content": "{\"question\": \"Cough present?\", \"options\": [\"Yes\", \"No\"]}",
+      "input_tokens": 306,
+      "output_tokens": 18,
+      "total_tokens": 324,
+      "timings": {
+        "cache_n": 305,
+        "prompt_n": 1,
+        "prompt_ms": 352.836,
+        "prompt_per_token_ms": 352.836,
+        "prompt_per_second": 2.8341779183530025,
+        "predicted_n": 18,
+        "predicted_ms": 6267.195,
+        "predicted_per_token_ms": 348.1775,
+        "predicted_per_second": 2.8720982832032513
+      },
+      "input_tokens_tokenize": 306,
+      "output_tokens_tokenize": 17
+    },
+    {
+      "step": "answer_3_next_question",
+      "grammar": "question",
+      "status": 200,
+      "elapsed_s": 8.442,
+      "prompt": "<|im_start|>system\nYou are a clinical triage assistant.\nGenerate ONE short follow-up question with answer options that helps narrow the diagnosis.\n\nQuestion format rules:\n- Question must be 2 to 6 words ending with \"?\"\n- Examples: \"Fever since?\", \"Peak temperature?\", \"Activity level?\", \"Rash present?\"\n\nOption format rules:\n- Each option is a short label (1 to 5 words)\n- Number of options must match the question type naturally:\n    Yes / No question      \u2192  2 options  e.g. [\"Yes\", \"No\"]\n    Duration question      \u2192  4-5 options e.g. [\"1 day\",\"2 days\",\"3 days\",\"4+ days\"]\n    Temperature question   \u2192  5 options  e.g. [\"99\u00b0F\",\"100\u00b0F\",\"101\u00b0F\",\"102\u00b0F\",\"103\u00b0F+\"]\n    Severity/scale         \u2192  3-4 options e.g. [\"Mild\",\"Moderate\",\"Severe\"]\n    Category question      \u2192  3-5 options e.g. [\"None\",\"Localized\",\"Spreading\"]\n- Do NOT repeat any previously asked question\n<|im_end|>\n<|im_start|>user\nChief complaint : fever\nClinical history: Fever and cough for 3 days\ncurrent consultation    : None\nFollow-up history    : None\nQuestions already asked:\n  Q: Peak temperature?\n  A: 99\u00b0F\n  Q: Fever since?\n  A: Yes\n  Q: Cough present?\n  A: Yes\n<|im_end|>\n<|im_start|>assistant\n",
+      "sections": {
+        "system_prompt": "You are a clinical triage assistant.\nGenerate ONE short follow-up question with answer options that helps narrow the diagnosis.\n\nQuestion format rules:\n- Question must be 2 to 6 words ending with \"?\"\n- Examples: \"Fever since?\", \"Peak temperature?\", \"Activity level?\", \"Rash present?\"\n\nOption format rules:\n- Each option is a short label (1 to 5 words)\n- Number of options must match the question type naturally:\n    Yes / No question      \u2192  2 options  e.g. [\"Yes\", \"No\"]\n    Duration question      \u2192  4-5 options e.g. [\"1 day\",\"2 days\",\"3 days\",\"4+ days\"]\n    Temperature question   \u2192  5 options  e.g. [\"99\u00b0F\",\"100\u00b0F\",\"101\u00b0F\",\"102\u00b0F\",\"103\u00b0F+\"]\n    Severity/scale         \u2192  3-4 options e.g. [\"Mild\",\"Moderate\",\"Severe\"]\n    Category question      \u2192  3-5 options e.g. [\"None\",\"Localized\",\"Spreading\"]\n- Do NOT repeat any previously asked question",
+        "user_input": "Chief complaint : fever\nClinical history: Fever and cough for 3 days\ncurrent consultation    : None\nFollow-up history    : None\nQuestions already asked:\n  Q: Peak temperature?\n  A: 99\u00b0F\n  Q: Fever since?\n  A: Yes\n  Q: Cough present?\n  A: Yes",
+        "history": "Questions already asked:\n  Q: Peak temperature?\n  Q: Fever since?\n  Q: Cough present?"
+      },
+      "output_content": "{\"question\":\"Cough frequency?\",\"options\":[\"Rare\",\"Occasional\",\"Frequent\",\"Constant\"]}",
+      "input_tokens": 318,
+      "output_tokens": 22,
+      "total_tokens": 340,
+      "timings": {
+        "cache_n": 317,
+        "prompt_n": 1,
+        "prompt_ms": 677.434,
+        "prompt_per_token_ms": 677.434,
+        "prompt_per_second": 1.4761585630482084,
+        "predicted_n": 22,
+        "predicted_ms": 7754.734,
+        "predicted_per_token_ms": 352.4879090909091,
+        "predicted_per_second": 2.8369767422067604
+      },
+      "input_tokens_tokenize": 318,
+      "output_tokens_tokenize": 21
+    },
+    {
+      "step": "answer_4_next_question",
+      "grammar": "question",
+      "status": 200,
+      "elapsed_s": 9.481,
+      "prompt": "<|im_start|>system\nYou are a clinical triage assistant.\nGenerate ONE short follow-up question with answer options that helps narrow the diagnosis.\n\nQuestion format rules:\n- Question must be 2 to 6 words ending with \"?\"\n- Examples: \"Fever since?\", \"Peak temperature?\", \"Activity level?\", \"Rash present?\"\n\nOption format rules:\n- Each option is a short label (1 to 5 words)\n- Number of options must match the question type naturally:\n    Yes / No question      \u2192  2 options  e.g. [\"Yes\", \"No\"]\n    Duration question      \u2192  4-5 options e.g. [\"1 day\",\"2 days\",\"3 days\",\"4+ days\"]\n    Temperature question   \u2192  5 options  e.g. [\"99\u00b0F\",\"100\u00b0F\",\"101\u00b0F\",\"102\u00b0F\",\"103\u00b0F+\"]\n    Severity/scale         \u2192  3-4 options e.g. [\"Mild\",\"Moderate\",\"Severe\"]\n    Category question      \u2192  3-5 options e.g. [\"None\",\"Localized\",\"Spreading\"]\n- Do NOT repeat any previously asked question\n<|im_end|>\n<|im_start|>user\nChief complaint : fever\nClinical history: Fever and cough for 3 days\ncurrent consultation    : None\nFollow-up history    : None\nQuestions already asked:\n  Q: Peak temperature?\n  A: 99\u00b0F\n  Q: Fever since?\n  A: Yes\n  Q: Cough present?\n  A: Yes\n  Q: Cough severity?\n  A: Yes\n<|im_end|>\n<|im_start|>assistant\n",
+      "sections": {
+        "system_prompt": "You are a clinical triage assistant.\nGenerate ONE short follow-up question with answer options that helps narrow the diagnosis.\n\nQuestion format rules:\n- Question must be 2 to 6 words ending with \"?\"\n- Examples: \"Fever since?\", \"Peak temperature?\", \"Activity level?\", \"Rash present?\"\n\nOption format rules:\n- Each option is a short label (1 to 5 words)\n- Number of options must match the question type naturally:\n    Yes / No question      \u2192  2 options  e.g. [\"Yes\", \"No\"]\n    Duration question      \u2192  4-5 options e.g. [\"1 day\",\"2 days\",\"3 days\",\"4+ days\"]\n    Temperature question   \u2192  5 options  e.g. [\"99\u00b0F\",\"100\u00b0F\",\"101\u00b0F\",\"102\u00b0F\",\"103\u00b0F+\"]\n    Severity/scale         \u2192  3-4 options e.g. [\"Mild\",\"Moderate\",\"Severe\"]\n    Category question      \u2192  3-5 options e.g. [\"None\",\"Localized\",\"Spreading\"]\n- Do NOT repeat any previously asked question",
+        "user_input": "Chief complaint : fever\nClinical history: Fever and cough for 3 days\ncurrent consultation    : None\nFollow-up history    : None\nQuestions already asked:\n  Q: Peak temperature?\n  A: 99\u00b0F\n  Q: Fever since?\n  A: Yes\n  Q: Cough present?\n  A: Yes\n  Q: Cough severity?\n  A: Yes",
+        "history": "Questions already asked:\n  Q: Peak temperature?\n  Q: Fever since?\n  Q: Cough present?\n  Q: Cough severity?"
+      },
+      "output_content": "{\"question\":\"Cough duration?\\n\",\"options\":[\"1 day\",\"2 days\",\"3 days\",\"4+ days\"]}",
+      "input_tokens": 330,
+      "output_tokens": 25,
+      "total_tokens": 355,
+      "timings": {
+        "cache_n": 329,
+        "prompt_n": 1,
+        "prompt_ms": 363.342,
+        "prompt_per_token_ms": 363.342,
+        "prompt_per_second": 2.7522279285081273,
+        "predicted_n": 25,
+        "predicted_ms": 9105.271,
+        "predicted_per_token_ms": 364.21084,
+        "predicted_per_second": 2.745662375123157
+      },
+      "input_tokens_tokenize": 330,
+      "output_tokens_tokenize": 24
+    }
+  ],
+  "failures": [
+    {
+      "endpoint": "MEDICAL_CONTEXT",
+      "status": "EXCEPTION",
+      "payload": {
+        "complaint": "fever"
+      },
+      "response": "HTTPConnectionPool(host='34.180.37.249', port=8007): Max retries exceeded with url: /api/v1/patient/791427b4-9cc4-8bcc-3fee-e3e14b6d3fea/complaint/latest?complaint=fever (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7a6cb2b3d960>: Failed to establish a new connection: [Errno 111] Connection refused'))",
+      "response_time_s": null
+    },
+    {
+      "endpoint": "/answer",
+      "status": 503,
+      "payload": {
+        "session_id": "52ea8f9e-fbd9-4888-822c-13ad292aea30",
+        "selected_option": "Yes"
+      },
+      "response": {
+        "detail": "Qwen timed out after 60s. Server may be overloaded \u2014 restart llama.cpp and try again."
+      },
+      "response_time_s": 60.075
+    },
+    {
+      "endpoint": "http://34.180.37.249:8004/api/v1/generate-summary-stream",
+      "status": "EXCEPTION",
+      "payload": {
+        "patient_id": "791427b4-9cc4-8bcc-3fee-e3e14b6d3fea",
+        "context": {
+          "chief_complaint": "fever",
+          "questions": [
+            {
+              "question": "Peak temperature?",
+              "answer": "99\u00b0F"
+            },
+            {
+              "question": "Fever since?",
+              "answer": "Yes"
+            },
+            {
+              "question": "Cough present?",
+              "answer": "Yes"
+            },
+            {
+              "question": "Cough severity?",
+              "answer": "Yes"
+            }
+          ],
+          "diagnoses": [],
+          "investigations": [],
+          "medications": []
+        },
+        "section": "medications",
+        "debug": true
+      },
+      "response": "HTTPConnectionPool(host='34.180.37.249', port=8004): Max retries exceeded with url: /api/v1/generate-summary-stream (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7a6cb2b3ea70>: Failed to establish a new connection: [Errno 111] Connection refused'))",
+      "response_time_s": 0.003
+    },
+    {
+      "endpoint": "http://34.180.37.249:8004/api/v1/generate-summary",
+      "status": "EXCEPTION",
+      "payload": {
+        "patient_id": "791427b4-9cc4-8bcc-3fee-e3e14b6d3fea",
+        "context": {
+          "chief_complaint": "fever",
+          "questions": [
+            {
+              "question": "Peak temperature?",
+              "answer": "99\u00b0F"
+            },
+            {
+              "question": "Fever since?",
+              "answer": "Yes"
+            },
+            {
+              "question": "Cough present?",
+              "answer": "Yes"
+            },
+            {
+              "question": "Cough severity?",
+              "answer": "Yes"
+            }
+          ],
+          "diagnoses": [],
+          "investigations": [],
+          "medications": []
+        },
+        "section": "medications",
+        "debug": true
+      },
+      "response": "HTTPConnectionPool(host='34.180.37.249', port=8004): Max retries exceeded with url: /api/v1/generate-summary (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7a6cb2b3d540>: Failed to establish a new connection: [Errno 111] Connection refused'))",
+      "response_time_s": 0.006
+    }
+  ],
+  "cors": [
+    {
+      "endpoint": "/start",
+      "url": "http://34.180.37.249:9000/start",
+      "request_payload": {
+        "Origin": "http://localhost:5500",
+        "Access-Control-Request-Method": "POST",
+        "Access-Control-Request-Headers": "content-type"
+      },
+      "status": 200,
+      "response_time_s": 0.004,
+      "response": {
+        "raw": "OK"
+      }
+    },
+    {
+      "endpoint": "http://34.180.37.249:9000/start",
+      "status": 200,
+      "headers": {
+        "date": "Mon, 06 Apr 2026 10:23:49 GMT",
+        "server": "uvicorn",
+        "access-control-allow-origin": "*",
+        "access-control-allow-methods": "DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT",
+        "access-control-max-age": "600",
+        "access-control-allow-headers": "content-type",
+        "content-length": "2",
+        "content-type": "text/plain; charset=utf-8"
+      },
+      "body": "OK"
+    },
+    {
+      "endpoint": "http://34.180.37.249:8004/api/v1/generate-summary-stream",
+      "status": "EXCEPTION",
+      "error": "HTTPConnectionPool(host='34.180.37.249', port=8004): Max retries exceeded with url: /api/v1/generate-summary-stream (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7a6cb2b3f700>: Failed to establish a new connection: [Errno 111] Connection refused'))"
+    }
+  ]
+}
