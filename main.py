@@ -1,10 +1,12 @@
 import logging
-from fastapi import FastAPI, HTTPException
+from datetime import datetime
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import Optional, List
 import requests
-from config import MAX_QUESTIONS, RETRY_COUNT , MEDICAL_API_BASE
+from config import MAX_QUESTIONS, RETRY_COUNT , MEDICAL_API_BASE, QWEN_URL
 from state import create_session, get_session, save_answer
 from rag_retrival import _clinical_history_chunk
 from llm import (
@@ -26,6 +28,103 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Clinical Triage Assistant")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+
+
+@app.get("/health")
+def health(request: Request):
+    docs_url = str(request.base_url).rstrip("/") + "/docs"
+    try:
+        response = requests.get(docs_url, timeout=2)
+        return JSONResponse(
+            status_code=200,
+            content={
+                "status": "ok" if response.ok else "degraded",
+                "service": app.title,
+                "checked_url": docs_url,
+                "docs_status_code": response.status_code,
+                "timestamp": datetime.utcnow().isoformat(),
+            },
+        )
+    except Exception as exc:
+        return JSONResponse(
+            status_code=503,
+            content={
+                "status": "degraded",
+                "service": app.title,
+                "checked_url": docs_url,
+                "reason": str(exc),
+                "timestamp": datetime.utcnow().isoformat(),
+            },
+        )
+
+
+def _check_qwen() -> dict:
+    response = requests.post(
+        QWEN_URL,
+        json={
+            "prompt": "ping",
+            "n_predict": 1,
+            "temperature": 0,
+            "stop": ["</s>", "<|im_end|>"],
+        },
+        timeout=5,
+    )
+    response.raise_for_status()
+    payload = response.json()
+    return {
+        "status": "ok",
+        "model_url": QWEN_URL,
+        "http_status": response.status_code,
+        "has_content": "content" in payload,
+        "timestamp": datetime.utcnow().isoformat(),
+    }
+
+
+@app.get("/qwen-health")
+def qwen_health():
+    try:
+        return JSONResponse(status_code=200, content=_check_qwen())
+    except Exception as exc:
+        return JSONResponse(
+            status_code=503,
+            content={
+                "status": "degraded",
+                "model_url": QWEN_URL,
+                "reason": str(exc),
+                "timestamp": datetime.utcnow().isoformat(),
+            },
+        )
+
+
+@app.get("/ready")
+def ready(request: Request):
+    docs_url = str(request.base_url).rstrip("/") + "/docs"
+    try:
+        docs_response = requests.get(docs_url, timeout=2)
+        qwen_result = _check_qwen()
+        status_code = 200 if docs_response.ok and qwen_result["status"] == "ok" else 503
+        return JSONResponse(
+            status_code=status_code,
+            content={
+                "status": "ready" if status_code == 200 else "degraded",
+                "service": app.title,
+                "checked_url": docs_url,
+                "docs_status_code": docs_response.status_code,
+                "qwen": qwen_result,
+                "timestamp": datetime.utcnow().isoformat(),
+            },
+        )
+    except Exception as exc:
+        return JSONResponse(
+            status_code=503,
+            content={
+                "status": "degraded",
+                "service": app.title,
+                "checked_url": docs_url,
+                "reason": str(exc),
+                "timestamp": datetime.utcnow().isoformat(),
+            },
+        )
 
 
 # ── Request models ────────────────────────────────────────────
