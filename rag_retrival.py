@@ -1,7 +1,7 @@
 import requests
 from typing import Tuple, Dict, Any
 
-SEARCH_API_BASE = "http://34.180.37.249:8003"
+from config import SEARCH_API_BASE
 
 def _clinical_history_chunk(patient_id: str, query: str) -> Tuple[Dict[str, Any], list, dict]:
     try:
