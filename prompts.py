@@ -33,7 +33,13 @@ def _to_qa(items) -> str:
         pairs.append(f"{q} -> {a}")
     return ", ".join(pairs) if pairs else "None"
 
-
+# ✅ Define this FIRST
+def _field(label: str, value: str) -> str:
+    """Return 'label: value' only if value is not None/empty, else empty string."""
+    if not value or value == "None":
+        return ""
+    return f"{label}: {value}"
+    
 def _to_complaints(items) -> str:
     if not isinstance(items, list):
         return "None"
@@ -52,14 +58,15 @@ def _format_follow_up_history(follow_up_history: list) -> str:
         visit_no = entry.get("visit_number", i)
 
         complaints = _to_complaints(entry.get("chief_complaints", []))
-        vitals = entry.get("vitals") or {}
-        vitals_str = (
-            f"Temp: {vitals.get('temp_celsius')}, BP: {vitals.get('bp_mmhg')}, "
-            f"Weight: {vitals.get('weight_kg')}, Height: {vitals.get('height_cm')}, "
-            f"HeadCirc: {vitals.get('head_circ_cm')}"
-            if isinstance(vitals, dict) and vitals
-            else "None"
-        )
+        vitals = entry.get("vitals") or {}  # or last.get("vitals") for current consultation
+        vitals_parts = [
+            f"Temp: {vitals['temp_celsius']}" if vitals.get('temp_celsius') is not None else "",
+            f"BP: {vitals['bp_mmhg']}" if vitals.get('bp_mmhg') is not None else "",
+            f"Weight: {vitals['weight_kg']}" if vitals.get('weight_kg') is not None else "",
+            f"Height: {vitals['height_cm']}" if vitals.get('height_cm') is not None else "",
+            f"HeadCirc: {vitals['head_circ_cm']}" if vitals.get('head_circ_cm') is not None else "",
+        ]
+        vitals_str = ", ".join(v for v in vitals_parts if v) or "None"
 
         key_qa = _to_qa(entry.get("key_questions", []))
         diagnoses = _to_names(entry.get("diagnoses", []))
@@ -69,15 +76,24 @@ def _format_follow_up_history(follow_up_history: list) -> str:
         advice = entry.get("advice", "") or "None"
         follow_up_date = entry.get("follow_up_date", "") or "None"
 
-        parts.append(
-            f"Visit {visit_no} ({date}) | Complaints: {complaints} | "
-            f"Vitals: {vitals_str} | Key Q&A: {key_qa} | "
-            f"Diagnoses: {diagnoses} | Investigations: {investigations} | "
-            f"Medications: {medications} | Procedures: {procedures} | "
-            f"Advice: {advice} | Follow-up date: {follow_up_date}"
-        )
+        # ✅ inside the loop
+        fields = [
+            f"Visit {visit_no}" if visit_no else "Visit",
+            f"({date})" if date and date != "Unknown date" else "",
+            _field("Complaints", complaints),
+            _field("Vitals", vitals_str if vitals_str != "None" else ""),
+            _field("Key Q&A", key_qa),
+            _field("Diagnoses", diagnoses),
+            _field("Investigations", investigations),
+            _field("Medications", medications),
+            _field("Procedures", procedures),
+            _field("Advice", advice),
+            _field("Follow-up date", follow_up_date),
+        ]
 
-    return "\n".join(parts) if parts else "None"
+        parts.append(" | ".join(f for f in fields if f))  # ✅ inside the loop
+
+    return "\n".join(parts) if parts else "None"  # ✅ return was missing
 def _format_current_consultation(last: dict) -> str:
     if not isinstance(last, dict) or not last:
         return "None"
@@ -95,22 +111,31 @@ def _format_current_consultation(last: dict) -> str:
     advice = last.get("advice", "") or "None"
     follow_up_date = last.get("follow_up_date", "") or "None"
 
-    vitals = last.get("vitals") or {}
-    vitals_str = (
-        f"Temp: {vitals.get('temp_celsius')}, BP: {vitals.get('bp_mmhg')}, "
-        f"Weight: {vitals.get('weight_kg')}, Height: {vitals.get('height_cm')}, "
-        f"HeadCirc: {vitals.get('head_circ_cm')}"
-        if isinstance(vitals, dict) and vitals
-        else "None"
-    )
+    vitals = last.get("vitals") or {}  # or last.get("vitals") for current consultation
+    vitals_parts = [
+        f"Temp: {vitals['temp_celsius']}" if vitals.get('temp_celsius') is not None else "",
+        f"BP: {vitals['bp_mmhg']}" if vitals.get('bp_mmhg') is not None else "",
+        f"Weight: {vitals['weight_kg']}" if vitals.get('weight_kg') is not None else "",
+        f"Height: {vitals['height_cm']}" if vitals.get('height_cm') is not None else "",
+        f"HeadCirc: {vitals['head_circ_cm']}" if vitals.get('head_circ_cm') is not None else "",
+    ]
+    vitals_str = ", ".join(v for v in vitals_parts if v) or "None"
 
-    return (
-        f"Visit {visit_no} ({date}) | Complaints: {complaints} | "
-        f"Vitals: {vitals_str} | Key Q&A: {key_qa} | "
-        f"Diagnoses: {diagnoses} | Investigations: {investigations} | "
-        f"Medications: {medications} | Procedures: {procedures} | "
-        f"Advice: {advice} | Follow-up date: {follow_up_date}"
-    )
+    fields = [
+        f"Visit {visit_no}" if visit_no else "Visit",
+        f"({date})" if date and date != "Unknown date" else "",
+        _field("Complaints", complaints),
+        _field("Vitals", vitals_str if vitals_str != "None" else ""),
+        _field("Key Q&A", key_qa),
+        _field("Diagnoses", diagnoses),
+        _field("Investigations", investigations),
+        _field("Medications", medications),
+        _field("Procedures", procedures),
+        _field("Advice", advice),
+        _field("Follow-up date", follow_up_date),
+    ]
+
+    return " | ".join(f for f in fields if f)
 def build_question_prompt(session: dict) -> str:
     """
     Build the prompt for the next triage question.
