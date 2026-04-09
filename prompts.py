@@ -117,15 +117,20 @@ def build_question_prompt(session: dict) -> str:
     The GBNF grammar (not the prompt) enforces JSON structure,
     so this prompt focuses purely on clinical context.
     """
-    prev = ""
-    if session["questions"]:
-        pairs = "\n".join(
-            f"  Q: {q}\n  A: {a}"
-            for q, a in zip(session["questions"], session["answers"])
-        )
-        prev = f"Questions already asked:\n{pairs}"
-    else:
-        prev = "Questions already asked: none"
+    llm_pairs = "\n".join(
+        f"  Q: {q}\n  A: {a}"
+        for q, a in zip(session["questions"], session["answers"])
+    ) if session["questions"] else ""
+
+    manual_qs = session.get("manual_key_questions", [])
+    manual_pairs = "\n".join(
+        f"  Q: {mq['question']}\n  A: {mq['answer']}"
+        for mq in manual_qs
+        if mq.get("question") and mq.get("answer")
+    ) if manual_qs else ""
+
+    all_asked = "\n".join(p for p in [manual_pairs, llm_pairs] if p)
+    prev = f"Questions already asked:\n{all_asked}" if all_asked else "Questions already asked: none"
 
     return f"""<|im_start|>system
 You are a clinical triage assistant helping a doctor refine diagnosis.
@@ -239,6 +244,14 @@ Questions already asked:
 
 def build_diagnosis_prompt(session: dict) -> str:
     qa = "\n".join(f"  {q} → {a}" for q, a in zip(session["questions"], session["answers"]))
+    manual_qs = session.get("manual_key_questions", [])
+    if manual_qs:
+        manual_qa = "\n".join(
+            f"  {mq['question']} → {mq['answer']}"
+            for mq in manual_qs
+            if mq.get("question") and mq.get("answer")
+        )
+        qa = "\n".join(filter(None, [manual_qa, qa]))
     return f"""<|im_start|>system
 You are a clinical assistant. List 6-10 differential diagnoses ranked most to least likely.
 Use only "high", "medium", or "low" for likelihood. Common conditions first.
@@ -256,8 +269,17 @@ Clinical Q&A:
 
 
 def build_investigations_prompt(session: dict) -> str:
-    diagnoses = ", ".join(session["diagnoses"])
     qa = "\n".join(f"  {q} → {a}" for q, a in zip(session["questions"], session["answers"]))
+    manual_qs = session.get("manual_key_questions", [])
+    if manual_qs:
+        manual_qa = "\n".join(
+            f"  {mq['question']} → {mq['answer']}"
+            for mq in manual_qs
+            if mq.get("question") and mq.get("answer")
+        )
+        qa = "\n".join(filter(None, [manual_qa, qa]))
+    all_diagnoses = list(dict.fromkeys(session["diagnoses"] + session.get("manual_diagnoses", [])))
+    diagnoses = ", ".join(all_diagnoses)
     return f"""<|im_start|>system
 You are a clinical assistant. Suggest 5-10 relevant medical investigations for the given diagnoses.
 For each investigation provide a short reason (why it is needed). Be specific and practical.
@@ -276,8 +298,8 @@ Selected diagnoses: {diagnoses}
 
 
 def build_medications_prompt(session: dict) -> str:
-    diagnoses      = ", ".join(session["diagnoses"])
-    investigations = ", ".join(session["investigations"])
+    diagnoses      = ", ".join(list(dict.fromkeys(session["diagnoses"] + session.get("manual_diagnoses", []))))
+    investigations = ", ".join(list(dict.fromkeys(session["investigations"] + session.get("manual_investigations", []))))
     return f"""<|im_start|>system
 You are a clinical assistant. Suggest 5-10 medications appropriate for the diagnoses and investigation findings.
 For each medication provide the typical adult dose and route of administration.
@@ -295,9 +317,9 @@ Investigations done: {investigations}
 
 
 def build_procedures_prompt(session: dict) -> str:
-    diagnoses      = ", ".join(session["diagnoses"])
-    investigations = ", ".join(session["investigations"])
-    medications    = ", ".join(session["medications"])
+    diagnoses      = ", ".join(list(dict.fromkeys(session["diagnoses"] + session.get("manual_diagnoses", []))))
+    investigations = ", ".join(list(dict.fromkeys(session["investigations"] + session.get("manual_investigations", []))))
+    medications    = ", ".join(list(dict.fromkeys(session["medications"] + session.get("manual_medications", []) + session.get("manual_procedures", []))))
     return f"""<|im_start|>system
 You are a clinical assistant. Suggest 3-8 clinical procedures or interventions indicated for this patient.
 For each procedure give a clear indication (why it is needed for this patient).

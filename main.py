@@ -129,28 +129,41 @@ def ready(request: Request):
 
 # ── Request models ────────────────────────────────────────────
 
+class ManualQA(BaseModel):
+    question: str
+    answer: str
+
 class StartRequest(BaseModel):
     patient_id:str
     chief_complaint: str
     complaint_chain: str
     clinical_history: Optional[str] = ""
+    manual_key_questions: Optional[List[ManualQA]] = []
 
 
 class AnswerRequest(BaseModel):
     session_id: str
     selected_option: str
+    manual_key_questions: Optional[List[ManualQA]] = []
 
 class SelectDiagnosesRequest(BaseModel):
     session_id: str
     selected: List[str]          # doctor's chosen diagnoses
+    manual_key_questions: Optional[List[ManualQA]] = []
+    manual_diagnoses: Optional[List[str]] = []
 
 class SelectInvestigationsRequest(BaseModel):
     session_id: str
     selected: List[str]          # doctor's chosen investigations
+    manual_key_questions: Optional[List[ManualQA]] = []
+    manual_investigations: Optional[List[str]] = []
 
 class SelectMedicationsRequest(BaseModel):
     session_id: str
     selected: List[str]          # doctor's chosen medications
+    manual_key_questions: Optional[List[ManualQA]] = []
+    manual_medications: Optional[List[str]] = []
+    manual_procedures: Optional[List[str]] = []
 
 
 # ── Red-flag detection ────────────────────────────────────────
@@ -238,6 +251,7 @@ def start(req: StartRequest):
         patient_history_chunk,
         follow_up_history,
         current_consultation,
+        [{"question": mq.question, "answer": mq.answer} for mq in (req.manual_key_questions or [])]
     )
     print(f"[DEBUG] Session created — sid={sid}")
     session = get_session(sid)
@@ -263,6 +277,12 @@ def answer(req: AnswerRequest):
     session = get_session(req.session_id)
     if session is None:
         raise HTTPException(status_code=404, detail="Session not found.")
+
+    if req.manual_key_questions:
+        session["manual_key_questions"] = [
+            {"question": mq.question, "answer": mq.answer}
+            for mq in req.manual_key_questions
+        ]
 
     pending_q = session.pop("pending_question", "")
     save_answer(req.session_id, pending_q, req.selected_option)
@@ -310,6 +330,15 @@ def select_diagnoses(req: SelectDiagnosesRequest):
         raise HTTPException(status_code=400, detail="Select at least one diagnosis.")
 
     session["diagnoses"] = req.selected
+    if req.manual_key_questions:
+        session["manual_key_questions"] = [
+            {"question": mq.question, "answer": mq.answer}
+            for mq in req.manual_key_questions
+        ]
+    if req.manual_diagnoses:
+        session["manual_diagnoses"] = req.manual_diagnoses
+    # Merge manual diagnoses into selected for LLM context
+    session["diagnoses"] = list(dict.fromkeys(session["diagnoses"] + (req.manual_diagnoses or [])))
 
     inv = _generate(generate_investigations_raw, build_investigations_prompt,
                     validate_investigations, session, "investigations")
@@ -331,6 +360,14 @@ def select_investigations(req: SelectInvestigationsRequest):
         raise HTTPException(status_code=400, detail="Select at least one investigation.")
 
     session["investigations"] = req.selected
+    if req.manual_key_questions:
+        session["manual_key_questions"] = [
+            {"question": mq.question, "answer": mq.answer}
+            for mq in req.manual_key_questions
+        ]
+    if req.manual_investigations:
+        session["manual_investigations"] = req.manual_investigations
+    session["investigations"] = list(dict.fromkeys(session["investigations"] + (req.manual_investigations or [])))
 
     meds = _generate(generate_medications_raw, build_medications_prompt,
                      validate_medications, session, "medications")
@@ -352,6 +389,16 @@ def select_medications(req: SelectMedicationsRequest):
         raise HTTPException(status_code=400, detail="Select at least one medication.")
 
     session["medications"] = req.selected
+    if req.manual_key_questions:
+        session["manual_key_questions"] = [
+            {"question": mq.question, "answer": mq.answer}
+            for mq in req.manual_key_questions
+        ]
+    if req.manual_medications:
+        session["manual_medications"] = req.manual_medications
+    if req.manual_procedures:
+        session["manual_procedures"] = req.manual_procedures
+    session["medications"] = list(dict.fromkeys(session["medications"] + (req.manual_medications or [])))
 
     proc = _generate(generate_procedures_raw, build_procedures_prompt,
                      validate_procedures, session, "procedures")
