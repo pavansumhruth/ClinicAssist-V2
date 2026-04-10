@@ -358,5 +358,5 @@ Diagnoses          : {diagnoses}
 Investigations done: {investigations}
 Medications given  : {medications}
 <|im_end|>
-<|im_start|>assistant
+<|im_start|>assistant 
 """
