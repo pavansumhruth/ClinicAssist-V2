@@ -805,6 +805,46 @@ async function api(base, path, body) {
   }
 }
 
+// ─── Parse vitals from freeform text input ─────────────────
+function parseVitals(input) {
+  if (!input || typeof input !== 'string') return null;
+  
+  const vitals = {};
+  
+  // Regex patterns for each vital field
+  const patterns = {
+    temperatureC: /(?:temp|temperature)\s*[:]\s*(\d+\.?\d*)/i,
+    pulse: /(?:pulse|hr|heart\s*rate|beats)\s*[:]\s*(\d+)/i,
+    spo2: /(?:spo2|o2|oxygen|sat)\s*[:]\s*(\d+)/i,
+    systolicBloodPressure: /(?:sbp|systolic)\s*[:]\s*(\d+)/i,
+    diastolicBloodPressure: /(?:dbp|diastolic)\s*[:]\s*(\d+)/i,
+    respiratoryRate: /(?:rr|respiratory|breathing)\s*[:]\s*(\d+)/i,
+    heightCm: /(?:height|ht)\s*[:]\s*(\d+\.?\d*)\s*(?:cm)?/i,
+    weightKg: /(?:weight|wt)\s*[:]\s*(\d+\.?\d*)\s*(?:kg)?/i,
+    headCircumference: /(?:head|circumference|hc)\s*[:]\s*(\d+\.?\d*)\s*(?:cm)?/i,
+  };
+  // Try to parse each field
+  for (const [key, pattern] of Object.entries(patterns)) {
+    const match = input.match(pattern);
+    if (match) {
+      const value = match[1];
+      // Convert to appropriate type
+      if (key.endsWith('BloodPressure') || key === 'pulse' || key === 'spo2' || key === 'respiratoryRate') {
+        vitals[key] = parseInt(value, 10);
+      } else {
+        vitals[key] = parseFloat(value);
+      }
+    }
+  }
+  
+  // Store original input as vitalNotes
+  if (input.length > 0) {
+    vitals.vitalNotes = input;
+  }
+  
+  return Object.keys(vitals).length > 0 ? vitals : null;
+}
+
 // ─── Generic selectable list builder ───────────────────────
 function makeCheckItem(cls, html, onToggle) {
   const el = document.createElement("div");
@@ -1075,7 +1115,8 @@ async function generateNotes(section) {
 // ─── STEP 1 : Start session ─────────────────────────────────
 async function startSession() {
   complaint = document.getElementById("inComplaint").value.trim();
-  vitals = document.getElementById("inVitals").value.trim();
+  const vitalsInput = document.getElementById("inVitals").value.trim();
+  const parsedVitals = vitalsInput ? parseVitals(vitalsInput) : null;
 
   if (!complaint) { showErr("Please enter a chief complaint."); return; }
   clearErr();
@@ -1083,10 +1124,18 @@ async function startSession() {
   loading("Generating first question…");
 
   try {
-    const data = await api(BASE_TRIAGE, "/start", {
+    // Build payload with vitals
+    const payload = {
       chief_complaint:  complaint,
       clinical_history: document.getElementById("inHistory").value.trim(),
-    });
+    };
+    
+    // Include vitals if parsed successfully
+    if (parsedVitals && Object.keys(parsedVitals).length > 0) {
+      payload.vitals = parsedVitals;
+    }
+    
+    const data = await api(BASE_TRIAGE, "/start", payload);
     sid  = data.session_id;
     qNum = 1;
     document.getElementById("chipTxt").textContent = complaint;

@@ -39,6 +39,34 @@ def _field(label: str, value: str) -> str:
     if not value or value == "None":
         return ""
     return f"{label}: {value}"
+
+def _format_clinician_vitals(vitals: dict) -> str:
+    """Format clinician-entered vitals for LLM context."""
+    if not vitals or not isinstance(vitals, dict):
+        return ""
+    
+    fields = []
+    # Map dict keys to readable labels
+    mapping = {
+        "temperatureC": ("Temp", "°C"),
+        "pulse": ("Pulse", " bpm"),
+        "spo2": ("SpO2", "%"),
+        "systolicBloodPressure": ("SBP", " mmHg"),
+        "diastolicBloodPressure": ("DBP", " mmHg"),
+        "respiratoryRate": ("RR", " /min"),
+        "heightCm": ("Height", " cm"),
+        "weightKg": ("Weight", " kg"),
+        "headCircumference": ("Head Circumference", " cm"),
+        "karnofskyPerformanceScore": ("Karnofsky Score", ""),
+        "vitalNotes": ("Notes", ""),
+    }
+    
+    for key, (label, unit) in mapping.items():
+        val = vitals.get(key)
+        if val is not None and val != "":
+            fields.append(f"{label}: {val}{unit}")
+    
+    return ", ".join(fields) if fields else ""
     
 def _to_complaints(items) -> str:
     if not isinstance(items, list):
@@ -156,6 +184,10 @@ def build_question_prompt(session: dict) -> str:
 
     all_asked = "\n".join(p for p in [manual_pairs, llm_pairs] if p)
     prev = f"Questions already asked:\n{all_asked}" if all_asked else "Questions already asked: none"
+    
+    # Format clinician-entered vitals
+    clinician_vitals_str = _format_clinician_vitals(session.get("vitals", {}))
+    clinician_vitals_section = f"\nClinician-entered vitals: {clinician_vitals_str}" if clinician_vitals_str else ""
 
     return f"""<|im_start|>system
 You are a clinical triage assistant helping a doctor refine diagnosis.
@@ -254,7 +286,7 @@ No extra text.
 
 <|im_end|>
 <|im_start|>user
-Chief complaint : {session['complaint']} 
+Chief complaint : {session['complaint']}{clinician_vitals_section}
 Clinical history: {session['history'] or 'None'}
 Current consultation:
 {_format_current_consultation(session.get('current_consultation', {}))}
@@ -277,12 +309,16 @@ def build_diagnosis_prompt(session: dict) -> str:
             if mq.get("question") and mq.get("answer")
         )
         qa = "\n".join(filter(None, [manual_qa, qa]))
+    
+    clinician_vitals_str = _format_clinician_vitals(session.get("vitals", {}))
+    clinician_vitals_section = f"\nClinician-entered vitals: {clinician_vitals_str}" if clinician_vitals_str else ""
+    
     return f"""<|im_start|>system
 You are a clinical assistant. List 6-10 differential diagnoses ranked most to least likely.
 Use only "high", "medium", or "low" for likelihood. Common conditions first.
 <|im_end|>
 <|im_start|>user
-Chief complaint : {session['complaint']}
+Chief complaint : {session['complaint']}{clinician_vitals_section}
 Clinical history: {session['history'] or 'None'}
 current consultation    : {_format_current_consultation(session.get('current_consultation', {}))}
 Follow-up history    : {_format_follow_up_history(session.get('follow_up_history', []))}
@@ -305,12 +341,16 @@ def build_investigations_prompt(session: dict) -> str:
         qa = "\n".join(filter(None, [manual_qa, qa]))
     all_diagnoses = list(dict.fromkeys(session["diagnoses"] + session.get("manual_diagnoses", [])))
     diagnoses = ", ".join(all_diagnoses)
+    
+    clinician_vitals_str = _format_clinician_vitals(session.get("vitals", {}))
+    clinician_vitals_section = f"\nClinician-entered vitals: {clinician_vitals_str}" if clinician_vitals_str else ""
+    
     return f"""<|im_start|>system
 You are a clinical assistant. Suggest 5-10 relevant medical investigations for the given diagnoses.
 For each investigation provide a short reason (why it is needed). Be specific and practical.
 <|im_end|>
 <|im_start|>user
-Chief complaint : {session['complaint']}
+Chief complaint : {session['complaint']}{clinician_vitals_section}
 Clinical history: {session['history'] or 'None'}
 current consultation    : {_format_current_consultation(session.get('current_consultation', {}))}
 Follow-up history    : {_format_follow_up_history(session.get('follow_up_history', []))}
@@ -325,12 +365,16 @@ Selected diagnoses: {diagnoses}
 def build_medications_prompt(session: dict) -> str:
     diagnoses      = ", ".join(list(dict.fromkeys(session["diagnoses"] + session.get("manual_diagnoses", []))))
     investigations = ", ".join(list(dict.fromkeys(session["investigations"] + session.get("manual_investigations", []))))
+    
+    clinician_vitals_str = _format_clinician_vitals(session.get("vitals", {}))
+    clinician_vitals_section = f"\nClinician-entered vitals: {clinician_vitals_str}" if clinician_vitals_str else ""
+    
     return f"""<|im_start|>system
 You are a clinical assistant. Suggest 5-10 medications appropriate for the diagnoses and investigation findings.
 For each medication provide the typical adult dose and route of administration.
 <|im_end|>
 <|im_start|>user
-Chief complaint    : {session['complaint']}
+Chief complaint    : {session['complaint']}{clinician_vitals_section}
 Clinical history   : {session['history'] or 'None'}
 current consultation    : {_format_current_consultation(session.get('current_consultation', {}))}
 Follow-up history    : {_format_follow_up_history(session.get('follow_up_history', []))}
@@ -345,12 +389,16 @@ def build_procedures_prompt(session: dict) -> str:
     diagnoses      = ", ".join(list(dict.fromkeys(session["diagnoses"] + session.get("manual_diagnoses", []))))
     investigations = ", ".join(list(dict.fromkeys(session["investigations"] + session.get("manual_investigations", []))))
     medications    = ", ".join(list(dict.fromkeys(session["medications"] + session.get("manual_medications", []) + session.get("manual_procedures", []))))
+    
+    clinician_vitals_str = _format_clinician_vitals(session.get("vitals", {}))
+    clinician_vitals_section = f"\nClinician-entered vitals: {clinician_vitals_str}" if clinician_vitals_str else ""
+    
     return f"""<|im_start|>system
 You are a clinical assistant. Suggest 3-8 clinical procedures or interventions indicated for this patient.
 For each procedure give a clear indication (why it is needed for this patient).
 <|im_end|>
 <|im_start|>user
-Chief complaint    : {session['complaint']}
+Chief complaint    : {session['complaint']}{clinician_vitals_section}
 Clinical history   : {session['history'] or 'None'}
 current consultation    : {_format_current_consultation(session.get('current_consultation', {}))}
 Follow-up history    : {_format_follow_up_history(session.get('follow_up_history', []))}

@@ -133,12 +133,26 @@ class ManualQA(BaseModel):
     question: str
     answer: str
 
+class Vitals(BaseModel):
+    temperatureC: Optional[float] = None
+    pulse: Optional[int] = None
+    spo2: Optional[int] = None
+    systolicBloodPressure: Optional[int] = None
+    diastolicBloodPressure: Optional[int] = None
+    heightCm: Optional[float] = None
+    weightKg: Optional[float] = None
+    respiratoryRate: Optional[int] = None
+    vitalNotes: Optional[str] = None
+    headCircumference: Optional[float] = None
+    karnofskyPerformanceScore: Optional[int] = None
+
 class StartRequest(BaseModel):
     patient_id:str
     chief_complaint: str
     complaint_chain: str
     clinical_history: Optional[str] = ""
     manual_key_questions: Optional[List[ManualQA]] = []
+    vitals: Optional[Vitals] = None
 
 
 class AnswerRequest(BaseModel):
@@ -251,7 +265,8 @@ def start(req: StartRequest):
         patient_history_chunk,
         follow_up_history,
         current_consultation,
-        [{"question": mq.question, "answer": mq.answer} for mq in (req.manual_key_questions or [])]
+        [{"question": mq.question, "answer": mq.answer} for mq in (req.manual_key_questions or [])],
+        vitals=req.vitals.dict() if req.vitals else {}
     )
     print(f"[DEBUG] Session created — sid={sid}")
     session = get_session(sid)

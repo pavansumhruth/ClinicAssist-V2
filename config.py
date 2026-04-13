@@ -22,3 +22,4 @@ TIMEOUT_PROCEDURES    = 200
 
 # ── Session ──────────────────────────────────────────────────
 MAX_QUESTIONS = 5
+
