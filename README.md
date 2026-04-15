@@ -1001,6 +1001,5 @@ The current `index.html` is functionally very similar to `index.html.backup`. Th
   --host 0.0.0.0 \
   --port 8006 \
   --ctx-size 4096
-
-
-  uvicorn main:app --host 0.0.0.0 --port 9000
+  
+  uvicorn main:app --host 0.0.0.0 --port 9000 

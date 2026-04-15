@@ -179,6 +179,11 @@ class SelectMedicationsRequest(BaseModel):
     manual_medications: Optional[List[str]] = []
     manual_procedures: Optional[List[str]] = []
 
+class SetVitalsRequest(BaseModel):
+    session_id: str
+    vitals: Vitals
+    timestamp: Optional[str] = None
+
 
 # ── Red-flag detection ────────────────────────────────────────
 
@@ -281,6 +286,36 @@ def start(req: StartRequest):
         "question":        q["question"],
         "options":         q["options"],
         "completed":       False,
+    }
+
+
+# ── VITALS UPDATE: /set-vitals ────────────────────────────────
+# Update vitals for an existing session
+
+@app.post("/set-vitals")
+def set_vitals(req: SetVitalsRequest):
+    """
+    Update vitals for an active session.
+    Accepts structured Vitals object and optional timestamp.
+    """
+    session = get_session(req.session_id)
+    if session is None:
+        raise HTTPException(status_code=404, detail="Session not found.")
+    
+    # Convert vitals to dict and store in session
+    vitals_dict = req.vitals.dict()
+    session["vitals"] = vitals_dict
+    
+    print(f"[DEBUG] /set-vitals — session_id={req.session_id}")
+    print(f"[DEBUG]   vitals updated: temperatureC={vitals_dict.get('temperatureC')}, pulse={vitals_dict.get('pulse')}, spo2={vitals_dict.get('spo2')}")
+    if req.timestamp:
+        print(f"[DEBUG]   timestamp: {req.timestamp}")
+    
+    return {
+        "session_id": req.session_id,
+        "status": "vitals_updated",
+        "vitals": vitals_dict,
+        "timestamp": req.timestamp or datetime.utcnow().isoformat()
     }
 
 
